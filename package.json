@@ -1,15 +1,40 @@
 {
   "name": "vue3-form-wizard",
-  "private": true,
-  "version": "0.0.0",
+  "private": false,
+  "author": "parsa jiravand",
+  "version": "0.0.1",
+  "description": "Build simple recaptcha for vuejs without need server",
+  "license": "MIT",
+  "repository": "https://github.com/parsajiravand/vue-client-recaptcha",
+  "homepage": "https://github.com/parsajiravand/vue-client-recaptcha",
+  "files": [
+    "dist"
+  ],
+  "main": "./dist/vue-client-recaptcha.umd.js",
+  "module": "./dist/vue-client-recaptcha.es.js",
+  "exports": {
+    ".": {
+      "import": "./dist/vue-client-recaptcha.es.js",
+      "require": "./dist/vue-client-recaptcha.umd.js"
+    }
+  },
+  "types": "./dist/types/index.d.ts",
   "scripts": {
     "dev": "vite",
-    "build": "vue-tsc --noEmit && vite build",
+    "build": "vite build &&  vue-tsc  --emitDeclarationOnly ",
     "preview": "vite preview"
   },
-  "dependencies": {
-    "vue": "^3.2.25"
-  },
+  "dependencies": {},
+  "keywords": [
+    "vue",
+    "vue3",
+    "steppers",
+    "vue-stepper",
+    "vuejs",
+    "form",
+    "wizard",
+    "tab"
+  ],
   "devDependencies": {
     "@vitejs/plugin-vue": "^2.3.1",
     "@vitejs/plugin-vue-jsx": "^1.3.10",
@@ -18,6 +43,7 @@
     "typescript": "^4.5.4",
     "vite": "^2.9.5",
     "vite-plugin-banner": "^0.2.0",
+    "vue": "3.2.25",
     "vue-tsc": "^0.34.7"
   }
 }
