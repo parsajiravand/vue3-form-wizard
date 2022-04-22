@@ -2,20 +2,20 @@
   "name": "vue3-form-wizard",
   "private": false,
   "author": "parsa jiravand",
-  "version": "0.0.1",
-  "description": "Build simple recaptcha for vuejs without need server",
+  "version": "0.0.2",
+  "description": "vue3-form-wizard is a vue based component with no external depenendcies which simplifies tab wizard management.",
   "license": "MIT",
-  "repository": "https://github.com/parsajiravand/vue-client-recaptcha",
-  "homepage": "https://github.com/parsajiravand/vue-client-recaptcha",
+  "repository": "https://github.com/parsajiravand/vue3-form-wizard",
+  "homepage": "https://github.com/parsajiravand/vue3-form-wizard",
   "files": [
     "dist"
   ],
-  "main": "./dist/vue-client-recaptcha.umd.js",
-  "module": "./dist/vue-client-recaptcha.es.js",
+  "main": "./dist/vue3-form-wizard.umd.js",
+  "module": "./dist/vue3-form-wizard.es.js",
   "exports": {
     ".": {
-      "import": "./dist/vue-client-recaptcha.es.js",
-      "require": "./dist/vue-client-recaptcha.umd.js"
+      "import": "./dist/vue3-form-wizard.es.js",
+      "require": "./dist/vue3-form-wizard.umd.js"
     }
   },
   "types": "./dist/types/index.d.ts",

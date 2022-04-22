@@ -4,6 +4,8 @@
 
 
 
+
+## Until the version is completely stable
 - [x] Updated To Vue3 ✅
 - [x] Setup with Vite ✅
 - [x] Add declaration type(Typescript Support)✅
@@ -15,7 +17,9 @@
 
 A dynamic wizard to split your forms easier
 
-Vue-form-wizard is a vue based component with no external depenendcies which simplifies tab wizard management.
+Vue3-form-wizard is a vue based component with no external depenendcies which simplifies tab wizard management.
+
+
 
 
 # Old Documentation
