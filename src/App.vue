@@ -1,6 +1,6 @@
 <script lang="ts">
-import FormWizard from "../src/components/FormWizard.vue";
-import TabContent from "../src/components/TabContent.vue";
+import FormWizard from "./components/FormWizard.vue";
+import TabContent from "./components/TabContent.vue";
 import { defineComponent } from "@vue/runtime-core";
 
 export default defineComponent({
