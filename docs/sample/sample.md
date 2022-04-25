@@ -1,2 +1,0 @@
-# Hello VuePress
-`<demo />` <Demo />

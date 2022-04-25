@@ -1,5 +1,4 @@
 const { path } = require("@vuepress/utils");
-const { defaultTheme } = require( '@vuepress/theme-default')
 
 module.exports = {
   locales: {
@@ -24,6 +23,32 @@ module.exports = {
       // string - page file path
       '/bar/README.md',
     ],
+    sidebar:[
+       // NavbarItem
+      {
+        text: 'Usage',
+        link: '/usage/',
+      },
+      {
+        text: 'Props',
+        link: '/props/',
+      },{
+        text: 'Slots',
+        link: '/slots/',
+      },{
+        text: 'Methods',
+        link: '/methods/',
+      },{
+        text: 'Scoped slots',
+        link: '/scoped-slots/',
+      },{
+        text: 'Demos',
+        link: '/demos/',
+      },{
+        text: 'Playground',
+        link: '/playground/',
+      },
+    ]
   },
   plugins: [
     [
