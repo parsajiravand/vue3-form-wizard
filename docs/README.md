@@ -4,7 +4,7 @@ title: Home
 heroImage: /images/hero.png
 actions:
   - text: Get Started
-    link: /sample/sample
+    link: /usage/
     type: primary
   - text: Introduction
     link: /guide/

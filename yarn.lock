@@ -2267,10 +2267,10 @@ vue-tsc@^0.34.7:
   dependencies:
     "@volar/vue-typescript" "0.34.9"
 
-vue3-form-wizard@^0.0.3:
-  version "0.0.3"
-  resolved "https://registry.yarnpkg.com/vue3-form-wizard/-/vue3-form-wizard-0.0.3.tgz#10b57493d1261fa63f06c4d38c4039babadcd990"
-  integrity sha512-4bwgc7gJ/oxQv0i/QvKMCMatZHKRsY5TnkH1whMOG0WcEMSxU7toabURnlAnFwfO+oUZtw05X4GnGWAMWBzFvQ==
+vue3-form-wizard@0.0.4:
+  version "0.0.4"
+  resolved "https://registry.yarnpkg.com/vue3-form-wizard/-/vue3-form-wizard-0.0.4.tgz#4d8a9e769c2fb26e325ce8dcca804fca16bc0d18"
+  integrity sha512-9mTqevJAr66xyZRe8nAO2OBvd91S6Ar5yZofF0M0t9KJ/Y9vz9uxiv71/CtFjNhpt32U8Q15QXvkFkMwfrv4Og==
 
 vue@3.2.25:
   version "3.2.25"
