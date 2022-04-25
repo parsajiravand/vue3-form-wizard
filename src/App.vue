@@ -1,13 +1,7 @@
 <script lang="ts">
-import FormWizard from "./components/FormWizard.vue";
-import TabContent from "./components/TabContent.vue";
 import { defineComponent } from "@vue/runtime-core";
 
 export default defineComponent({
-  components: {
-    FormWizard,
-    TabContent,
-  },
   mounted() {
     console.log(this);
   },
@@ -23,6 +17,7 @@ export default defineComponent({
 </script>
 
 <template>
+test
   <form-wizard @on-complete="onComplete" shape="tab" color="#9b59b6">
     <tab-content
       title="Personal details"
