@@ -1,13 +1,7 @@
 <script lang="ts">
-import {FormWizard} from "vue3-form-wizard";
-import {TabContent} from "vue3-form-wizard";
 import { defineComponent } from "@vue/runtime-core";
 
 export default defineComponent({
-  components: {
-    FormWizard,
-    TabContent,
-  },
   mounted() {
     console.log(this);
   },

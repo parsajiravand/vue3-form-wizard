@@ -1,11 +1,5 @@
-# Playground
-
-## Simple
-<playground-simple />
-
-```html
 <template>
-  <form-wizard @on-complete="onComplete">
+  <form-wizard @on-complete="onComplete" shape="square" color="#3498db">
     <tab-content title="Personal details" icon="ti-user">
       My first tab content
     </tab-content>
@@ -19,8 +13,8 @@
 </template>
 
 <script>
-import {FormWizard,TabContent} from "vue3-form-wizard";
-import 'vue3-form-wizard/dist/style.css'
+import { FormWizard, TabContent } from "vue3-form-wizard";
+import "vue3-form-wizard/dist/style.css";
 export default {
   components: {
     FormWizard,
@@ -33,6 +27,3 @@ export default {
   },
 };
 </script>
-```
-
-

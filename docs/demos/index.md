@@ -1,17 +1,76 @@
-# Demos
-Basic [demo](https://jsfiddle.net/bt5dhqtf/97/)
+# Playground
 
-Other demos:
-* [Squared steps](https://jsfiddle.net/bt5dhqtf/98/)
-* [Tabbed steps](https://jsfiddle.net/bt5dhqtf/99/)
-* [Step index](https://jsfiddle.net/bt5dhqtf/100/) Start at any step. Note: start-index is zero-based and the count starts at 0
-* [Custom button and title text](https://jsfiddle.net/bt5dhqtf/101/)
-* [Custom title slot](https://jsfiddle.net/bt5dhqtf/102/)
-* [Call a function before tab switch](https://jsfiddle.net/bt5dhqtf/105/)
-* [Complete form example](https://jsfiddle.net/CristiJ/bt5dhqtf/286/) integrated with [vue-form-generator](https://github.com/icebob/vue-form-generator)
-* [Element UI form integration](https://jsfiddle.net/bt5dhqtf/409/)
-* [Vuelidate integration](https://jsfiddle.net/CristiJ/bt5dhqtf/1119/)
-* [Dynamic components for tabs](https://jsfiddle.net/bt5dhqtf/973/)
-* [Vue router integration](https://jsfiddle.net/bt5dhqtf/267/) You can place a `router-view` inside the wizard and have a separate page per tab. A `route` prop must be passed to the tabs you want to handle certain tabs
-* [Async validation with error message](https://jsfiddle.net/CristiJ/bt5dhqtf/298/) `before-change` prop can accept a promise that is resolved with `true` which will execute the promise before switching to another step/tab (NOTE: This feature is not present in the npm package yet)
-* [Customized buttons with scoped slot](https://jsfiddle.net/bt5dhqtf/717/)
+## Simple
+&nbsp;
+<playground-simple />
+&nbsp;
+
+```html
+<template>
+  <form-wizard @on-complete="onComplete">
+    <tab-content title="Personal details" icon="ti-user">
+      My first tab content
+    </tab-content>
+    <tab-content title="Additional Info" icon="ti-settings">
+      My second tab content
+    </tab-content>
+    <tab-content title="Last step" icon="ti-check">
+      Yuhuuu! This seems pretty damn simple
+    </tab-content>
+  </form-wizard>
+</template>
+
+<script>
+import {FormWizard,TabContent} from "vue3-form-wizard";
+import 'vue3-form-wizard/dist/style.css'
+export default {
+  components: {
+    FormWizard,
+    TabContent,
+  },
+  methods: {
+    onComplete: function () {
+      alert("Yay. Done!");
+    },
+  },
+};
+</script>
+```
+&nbsp;&nbsp;
+## Square steps
+
+&nbsp;
+<playground-squared-step />
+&nbsp;
+
+```html
+<template>
+  <form-wizard @on-complete="onComplete" shape="square" color="#3498db">
+    <tab-content title="Personal details" icon="ti-user">
+      My first tab content
+    </tab-content>
+    <tab-content title="Additional Info" icon="ti-settings">
+      My second tab content
+    </tab-content>
+    <tab-content title="Last step" icon="ti-check">
+      Yuhuuu! This seems pretty damn simple
+    </tab-content>
+  </form-wizard>
+</template>
+
+<script>
+import { FormWizard, TabContent } from "vue3-form-wizard";
+import "vue3-form-wizard/dist/style.css";
+export default {
+  components: {
+    FormWizard,
+    TabContent,
+  },
+  methods: {
+    onComplete: function () {
+      alert("Yay. Done!");
+    },
+  },
+};
+</script>
+```

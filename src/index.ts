@@ -4,7 +4,7 @@ import TabContent from "./components/TabContent.vue";
 import WizardButton from "./components/WizardButton.vue";
 import WizardStep from "./components/WizardStep.vue";
 
-const VueFormWizard = {
+const Vue3FormWizard = {
   install(Vue: App) {
     Vue.component("form-wizard", FormWizard);
     Vue.component("tab-content", TabContent);
@@ -17,5 +17,5 @@ const VueFormWizard = {
   window.Vue.use(VueFormWizard)
 } */
 
-export default VueFormWizard;
+export default Vue3FormWizard;
 export { FormWizard, TabContent, WizardButton, WizardStep };
