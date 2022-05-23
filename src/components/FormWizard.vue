@@ -237,7 +237,7 @@
       addTab (item) {
         console.log(item.$vnode)
         console.log(this.$.slots)
-        /* const index = this.$slots.default.indexOf(item.$vnode) */ //fix this part later
+        const index = this.$slots.default.indexOf(item.$vnode) //fix this part later
         const index = 1
         item.tabId = `${item.title.replace(/ /g, '')}${index}`
         this.tabs.splice(index, 0, item)

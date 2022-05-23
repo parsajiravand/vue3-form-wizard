@@ -1,9 +1,13 @@
 <script lang="ts">
 import { defineComponent } from "@vue/runtime-core";
-
+import {FormWizard,TabContent}  from "vue3-form-wizard";
+import 'vue3-form-wizard/dist/style.css'
 export default defineComponent({
   mounted() {
     console.log(this);
+  },
+  components:{
+FormWizard,TabContent
   },
   methods: {
     onComplete() {
