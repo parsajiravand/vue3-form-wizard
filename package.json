@@ -18,6 +18,7 @@
       "require": "./dist/vue3-form-wizard.umd.js"
     }
   },
+  "type": "module",
   "types": "./dist/types/index.d.ts",
   "scripts": {
     "dev": "vite",
