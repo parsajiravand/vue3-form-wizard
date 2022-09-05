@@ -1,13 +1,13 @@
 <script lang="ts">
-import FormWizard from "./components/FormWizard.vue";
-import TabContent from "./components/TabContent.vue";
-import { defineComponent } from "@vue/runtime-core";
 
+import { defineComponent } from "@vue/runtime-core";
+import { FormWizard, TabContent } from "vue3-form-wizard";
+import "/node_modules/vue3-form-wizard/dist/style.css";
 export default defineComponent({
-  components: {
-    FormWizard,
-    TabContent,
-  },
+components:{
+FormWizard,
+TabContent
+},
   mounted() {
     console.log(this);
   },
@@ -15,9 +15,7 @@ export default defineComponent({
     onComplete() {
       alert("Yay. Done!");
     },
-    beforeTabSwitch() {
-      console.log("switch");
-    },
+
   },
 });
 </script>
@@ -27,7 +25,6 @@ export default defineComponent({
     <tab-content
       title="Personal details"
       icon="ti-user"
-      :before-change="beforeTabSwitch"
     >
       My first tab content
     </tab-content>
