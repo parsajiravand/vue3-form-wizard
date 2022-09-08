@@ -1040,10 +1040,14 @@
   dependencies:
     "brace-expansion" "^1.1.7"
 
-"mkdirp@~1.0.4":
+"mkdirp@^1.0.4", "mkdirp@~1.0.4":
+  "integrity" "sha512-vVqVZQyf3WLx2Shd0qJ9xuvqgAyKPLAiqITEtqW0oIUjzo3PePDd6fW9iFz30ef7Ysp/oiWqbhszeGWW2T6Gzw=="
+  "resolved" "https://registry.npmjs.org/mkdirp/-/mkdirp-1.0.4.tgz"
   "version" "1.0.4"
 
 "ms@2.0.0":
+  "integrity" "sha512-Tpp60P6IUJDTuOq/5Z8cdskzJujfwqfOTkrwIwj7IRISpnkJnT6SyJ4PCPnGMoFjC9ddhal5KVIYtAt97ix05A=="
+  "resolved" "https://registry.npmjs.org/ms/-/ms-2.0.0.tgz"
   "version" "2.0.0"
 
 "ms@2.1.2":
@@ -1347,6 +1351,14 @@
   "integrity" "sha512-9mTqevJAr66xyZRe8nAO2OBvd91S6Ar5yZofF0M0t9KJ/Y9vz9uxiv71/CtFjNhpt32U8Q15QXvkFkMwfrv4Og=="
   "resolved" "https://registry.npmjs.org/vue3-form-wizard/-/vue3-form-wizard-0.0.4.tgz"
   "version" "0.0.4"
+
+"vue3-form-wizard@^0.0.6":
+  "integrity" "sha512-LJUbFp94GR4bVSglR708cB2c6nMVm5U7zZOxmkxro99bAF2YHhCN0PrvQHc/UduLxLW+pjPLBgFJ4L3nqXVdEA=="
+  "resolved" "https://registry.npmjs.org/vue3-form-wizard/-/vue3-form-wizard-0.0.6.tgz"
+  "version" "0.0.6"
+  dependencies:
+    "vue-client-recaptcha" "^1.0.5"
+    "vue3-form-wizard" "^0.0.4"
 
 "watchpack@^2.4.0":
   "version" "2.4.0"
