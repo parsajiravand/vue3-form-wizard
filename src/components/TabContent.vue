@@ -6,6 +6,7 @@
        :aria-labelledby="`step-${tabId}`">
     <slot :active="active">
     </slot>
+          <slot name="customIcon"></slot>
   </div>
 </template>
 <script>
@@ -20,6 +21,13 @@
        * Icon name for the upper circle corresponding to the tab
        */
       icon: {
+        type: String,
+        default: ''
+      },
+      /***
+       * Icon name for the upper circle corresponding to the tab
+       */
+      customIcon: {
         type: String,
         default: ''
       },
@@ -70,7 +78,7 @@
       },
       errorColor () {
         return this.$parent.errorColor
-      }
+      },
     },
     mounted () {
       this.addTab(this)
