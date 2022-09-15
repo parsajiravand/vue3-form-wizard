@@ -12,15 +12,26 @@
 - [ ] Fix All Issue on vue-form-wizard 🚧
 - [ ] Rewrite With Setup Function and ts 🚧
 - [ ] Setup New Features🚧
-- [ ] Setup New Documentation 🚧
+- [x] Setup New Documentation 🚧
 
 
 A dynamic wizard to split your forms easier
 
 Vue3-form-wizard is a vue based component with no external depenendcies which simplifies tab wizard management.
+## 🚀 Features
 
+- 🎪 [**Interactive docs & demos**](https://vue3-form-wizard-document.netlify.app/demos/)
+- 🦾 **Type Strong**: Written in [Typescript](https://www.typescriptlang.org/), with [TS Docs](https://github.com/microsoft/tsdoc)
+- 🌎 **No bundler required**: Usable via CDN
+- 🔩 **Flexible**: Configurable event filters and targets
 
+## 🔧 Document
 
+- ➡️ [**Usagae**](https://vue3-form-wizard-document.netlify.app/usage/)
+- ➡️ [**Props**](https://vue3-form-wizard-document.netlify.app/props/)
+- ➡️ [**Slots**](https://vue3-form-wizard-document.netlify.app/slots/)
+- ➡️ [**Methods**](https://vue3-form-wizard-document.netlify.app/Mmthods/)
+- ➡️ [**Scoped-slots**](https://vue3-form-wizard-document.netlify.app/scoped-slots/)
+- ➡️ [**Demos**](https://vue3-form-wizard-document.netlify.app/demos/)
 
-# Old Documentation
-# [Documentation](https://binarcode.github.io/vue-form-wizard/#/)
+### [Old Documentation](https://binarcode.github.io/vue-form-wizard/#/)
