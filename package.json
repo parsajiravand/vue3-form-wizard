@@ -48,6 +48,7 @@
     "vite-plugin-banner": "^0.2.0",
     "vue": "3.2.25",
     "vue-tsc": "^0.34.7",
-    "vue3-form-wizard": "^0.0.6"
+    "vue3-form-wizard": "^0.0.6",
+    "vue-router": "^4.1.6"
   }
 }

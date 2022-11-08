@@ -2,12 +2,16 @@
 import { defineComponent } from "@vue/runtime-core";
 import FormWizard from "./components/FormWizard.vue";
 import TabContent from "./components/TabContent.vue";
+import FormWizard2 from "./components/FormWizardComposition.vue";
+import TabContent2 from "./components/TabContentComposition.vue";
 import "/node_modules/vue3-form-wizard/dist/style.css";
 
 export default defineComponent({
   components: {
     FormWizard,
     TabContent,
+    FormWizard2,
+    TabContent2,
   },
   data() {
     return {
@@ -26,10 +30,12 @@ export default defineComponent({
 </script>
 
 <template>
-  <form-wizard @on-complete="onComplete" color="#9b59b6">
+  <div>
+      <form-wizard @on-complete="onComplete" color="#9b59b6">
     <tab-content
       title="Personal details"
       icon="fa fa-user"
+      color="square"
       :customIcon="`<img  src='${image}' />`"
     >
       My first tab content
@@ -42,6 +48,25 @@ export default defineComponent({
       Yuhuuu! This seems pretty damn simple
     </tab-content>
   </form-wizard>
+    <form-wizard-2 @on-complete="onComplete" color="#9b59b6">
+    <tab-content-2
+      title="Personal details"
+      icon="fa fa-user"
+      color="square"
+      :customIcon="`<img  src='${image}' />`"
+    >
+      My first tab content
+    </tab-content-2>
+    <tab-content-2 title="Additional Info"> My second tab content </tab-content-2>
+    <tab-content-2 title="before step" icon="fa fa-check">
+      Yuhuuu! This seems pretty damn simple
+    </tab-content-2>
+    <tab-content-2 title="Last step" icon="fa fa-check">
+      Yuhuuu! This seems pretty damn simple
+    </tab-content-2>
+  </form-wizard-2>
+  </div>
+
 </template>
 
 <style>

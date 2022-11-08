@@ -424,6 +424,11 @@
     "@vue/compiler-dom" "3.2.37"
     "@vue/shared" "3.2.37"
 
+"@vue/devtools-api@^6.4.5":
+  "integrity" "sha512-JD5fcdIuFxU4fQyXUu3w2KpAJHzTVdN+p4iOX2lMWSHMOoQdMAcpFLZzm9Z/2nmsoZ1a96QEhZ26e50xLBsgOQ=="
+  "resolved" "https://registry.npmjs.org/@vue/devtools-api/-/devtools-api-6.4.5.tgz"
+  "version" "6.4.5"
+
 "@vue/reactivity-transform@3.2.25":
   "integrity" "sha512-fOiW67PUalicMfMr4Sc9l8mUtkN7ZD+G1/zJV8blzQ8GEZSeRcJm11gqve6Ps623ju5YORu7V/Q1gZoOJ9WO4g=="
   "resolved" "https://registry.npmjs.org/@vue/reactivity-transform/-/reactivity-transform-3.2.25.tgz"
@@ -1331,12 +1336,19 @@
   "resolved" "https://registry.npmjs.org/vue-client-recaptcha/-/vue-client-recaptcha-1.0.5.tgz"
   "version" "1.0.5"
 
+"vue-router@^4.1.6":
+  "integrity" "sha512-DYWYwsG6xNPmLq/FmZn8Ip+qrhFEzA14EI12MsMgVxvHFDYvlr4NXpVF5hrRH1wVcDP8fGi5F4rxuJSl8/r+EQ=="
+  "resolved" "https://registry.npmjs.org/vue-router/-/vue-router-4.1.6.tgz"
+  "version" "4.1.6"
+  dependencies:
+    "@vue/devtools-api" "^6.4.5"
+
 "vue-tsc@^0.34.7":
   "version" "0.34.17"
   dependencies:
     "@volar/vue-typescript" "0.34.17"
 
-"vue@^3.2.25", "vue@3.2.25":
+"vue@^3.2.0", "vue@^3.2.25", "vue@3.2.25":
   "integrity" "sha512-jU3t7fyQDHoCWCqhmRrnSmYZvHC35tOJTP704di7HGfq5EcFA1cU/1ZPjUV1eCxJev65Khjyfni+vk9oa+eTtw=="
   "resolved" "https://registry.npmjs.org/vue/-/vue-3.2.25.tgz"
   "version" "3.2.25"

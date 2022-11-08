@@ -1,4 +1,4 @@
-<template  >
+<template>
   <div
     v-show="active"
     v-if="!lazy || active"
@@ -12,31 +12,34 @@
     <slot name="customIcon"></slot>
   </div>
 </template>
-<script lang="ts">
-export default {
-      inject: ['addTab'],
-    mounted () {
-      this.addTab(this)
-    },
-}
 
-</script>
 <script setup lang="ts">
-import { inject, ref,getCurrentInstance, computed, ComponentInternalInstance, onMounted, onUnmounted, onBeforeMount } from "vue";
-const instance = getCurrentInstance() as ExtraComponentInternalInstance
-type ExtraComponentInternalInstance = ComponentInternalInstance&{
-  parent:{
-    shape:string,
-    color:string,
-    errorColor:string,
-  }
+import {
+  ref,
+  getCurrentInstance,
+  computed,
+  ComponentInternalInstance,
+  onMounted,
+  onUnmounted,
+  onBeforeMount,
+} from "vue";
+import { inject } from "@vue/runtime-core";
+const instance = getCurrentInstance() as ExtraComponentInternalInstance;
+type ExtraComponentInternalInstance = ComponentInternalInstance & {
+  parent: {
+    shape: string;
+    color: string;
+    errorColor: string;
+  };
 
-  ctx:{  $el:{
-    parentNode:{
-      removeChild:Function
-    }
-  },}
-}
+  ctx: {
+    $el: {
+      parentNode: {
+        removeChild: Function;
+      };
+    };
+  };
+};
 const props = defineProps({
   title: {
     type: String,
@@ -84,28 +87,34 @@ const props = defineProps({
     default: () => {},
   },
 });
-const addTab:any = inject<object>("addTab");
-const removeTab:any = inject<object>("removeTab");
+const addTabChild: any = inject<object>("addTabFromParent");
+const removeTab: any = inject<object>("removeTab");
 
-const active =ref<boolean>(false)
-const validationError =ref<any>(false)
-const checked =ref<boolean>(false)
-const tabId =ref<string>('')
+const active = ref<boolean>(false);
+const validationError = ref<any>(false);
+const checked = ref<boolean>(false);
+const tabId = ref<string>("");
 
 const shape = computed<string>(() => {
-  return instance.parent.shape
-})
+  return instance.parent.shape;
+});
 const color = computed<string>(() => {
-  return instance.parent.color
-})
+  return instance.parent.color;
+});
 const errorColor = computed<string>(() => {
-  return instance.parent.errorColor
+  return instance.parent.errorColor;
+});
+onMounted(() => {
+  console.log("instance", instance);
+  //@ts-ignore
+  const payload = instance.ctx
+  addTabChild(payload);
 })
 
-onUnmounted(() => {
-   if (instance.ctx.$el && instance.ctx.$el.parentNode) {
-        instance.ctx.$el.parentNode.removeChild(instance.ctx.$el)
-      }
-      removeTab(instance.ctx)
-})
+  onUnmounted(() => {
+    if (instance.ctx.$el && instance.ctx.$el.parentNode) {
+      instance.ctx.$el.parentNode.removeChild(instance.ctx.$el);
+    }
+    removeTab(instance.ctx);
+  });
 </script>
