@@ -2,7 +2,7 @@
   "name": "vue3-form-wizard",
   "private": false,
   "author": "parsa jiravand",
-  "version": "0.1.7",
+  "version": "0.1.9",
   "description": "vue3-form-wizard is a vue based component with no external depenendcies which simplifies tab wizard management.",
   "license": "MIT",
   "repository": "https://github.com/parsajiravand/vue3-form-wizard",
@@ -35,7 +35,8 @@
     "vuejs",
     "form",
     "wizard",
-    "tab"
+    "tab",
+    "nuxt"
   ],
   "devDependencies": {
     "@vitejs/plugin-vue": "^3.1.0",
