@@ -1,5 +1,5 @@
 @mixin wizard-size($name, $size, $font-size){
-  $computed-font-size: math($size,2) + 5px;
+  $computed-font-size: calc($size/2) + 5px;
 
   &.#{$name}{
     .wizard-icon-circle{
