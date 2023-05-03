@@ -33,11 +33,17 @@
           <wizard-step
             :tab="tab"
             :step-size="stepSize"
-            @click="disableBackOnClickStep ? false : navigateToTab(index)"
+            @click="
+              disableBackOnClickStep || disableBack
+                ? false
+                : navigateToTab(index)
+            "
             @keyup.enter="navigateToTab(index)"
             :transition="transition"
             :index="index"
-            :disable-back-on-click-step="disableBackOnClickStep"
+            :disable-back-on-click-step="
+              disableBack ? true : disableBackOnClickStep
+            "
           >
           </wizard-step>
         </slot>
@@ -49,7 +55,7 @@
 
     <div class="wizard-card-footer clearfix" v-if="!hideButtons">
       <slot name="footer" v-bind="slotProps">
-        <div class="wizard-footer-left">
+        <div class="wizard-footer-left" v-if="!disableBack">
           <span
             @click="prevTab"
             @keyup.enter="prevTab"
@@ -190,9 +196,16 @@ export default {
       },
     },
     /*
-      * If true, the wizard not back step on click wizard step 
+     * If true, the wizard not back step on click wizard step
      */
     disableBackOnClickStep: {
+      type: Boolean,
+      default: false,
+    },
+    /*
+     * If true, the wizard not back step on click wizard step and back button
+     */
+    disableBack: {
       type: Boolean,
       default: false,
     },
