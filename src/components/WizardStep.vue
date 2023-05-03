@@ -1,6 +1,10 @@
 <template>
   <li :class="{ active: tab.active }">
-    <a href="javascript:void(0)" :class="{ disabled: !tab.checked }">
+    <a
+      href="javascript:void(0)"
+      :class="{ disabled: !tab.checked }"
+      :style="cursorStyle"
+    >
       <div
         class="wizard-icon-circle md"
         role="tab"
@@ -87,6 +91,10 @@ export default {
       type: Number,
       default: 0,
     },
+    disableBackOnClickStep: {
+      type: Boolean,
+      default: false,
+    },
   },
 
   computed: {
@@ -122,6 +130,9 @@ export default {
     },
     isTabShape() {
       return this.tab.shape === "tab";
+    },
+    cursorStyle() {
+      return this.disableBackOnClickStep ? "cursor: default" : "";
     },
   },
 };
