@@ -15,12 +15,12 @@
   "exports": {
     ".": {
       "import": "./dist/vue3-form-wizard.es.js",
-      "require": "./dist/vue3-form-wizard.umd.js"
+      "require": "./dist/vue3-form-wizard.umd.js",
+      "types": "./dist/types/index.d.ts"
     },
     "./dist/style.css": "./dist/style.css"
   },
   "type": "module",
-  "types": "./dist/types/index.d.ts",
   "scripts": {
     "dev": "vite",
     "build": "vite build && vue-tsc  --emitDeclarationOnly",
