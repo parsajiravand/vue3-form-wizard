@@ -1,10 +1,6 @@
 <template>
   <li :class="{ active: tab.active }">
-    <a
-      href="javascript:void(0)"
-      :class="{ disabled: !tab.checked }"
-      :style="cursorStyle"
-    >
+    <a :class="{ disabled: !tab.checked }" :style="cursorStyle">
       <div
         class="wizard-icon-circle md"
         role="tab"
