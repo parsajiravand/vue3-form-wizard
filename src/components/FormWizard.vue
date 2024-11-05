@@ -285,9 +285,12 @@ export default {
     },
     addTab(item) {
       /* const index = this.$.slots.default().length -1  */ //fix this part later
-      const index = this.tabCount;
-      item.tabId = `${item.title.replace(/ /g, "")}${index}`;
-      this.tabs.splice(index, 0, item);
+      let index = this.tabCount;
+      item.tabId = `${item.title.replace(/ /g, "")}${item.tabKey || index}`;
+      const foundTabIndex = this.tabs.findIndex(i => i.tabId === item.tabId );
+      const foundTab = foundTabIndex > -1
+      index = foundTab ? foundTabIndex : index;
+      this.tabs.splice(index, foundTab ? 1 :  0, item);
       // if a step is added before the current one, go to it
       if (index < this.activeTabIndex + 1) {
         this.maxStep = index;
