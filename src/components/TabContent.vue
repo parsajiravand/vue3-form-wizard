@@ -17,6 +17,10 @@
         type: String,
         default: ''
       },
+      key: {
+        type: String,
+        default: ''
+      },
       /***
        * Icon name for the upper circle corresponding to the tab
        */
