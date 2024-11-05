@@ -17,7 +17,7 @@
         type: String,
         default: ''
       },
-      key: {
+      tabKey: {
         type: String,
         default: ''
       },

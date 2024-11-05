@@ -286,8 +286,8 @@ export default {
     addTab(item) {
       /* const index = this.$.slots.default().length -1  */ //fix this part later
       let index = this.tabCount;
-      item.tabId = `${item.title.replace(/ /g, "")}${index}`;
-      const foundTabIndex = this.tabs.findIndex(i => i.tabId === item.tabId )
+      item.tabId = `${item.title.replace(/ /g, "")}${item.tabKey || index}`;
+      const foundTabIndex = this.tabs.findIndex(i => i.tabId === item.tabId );
       const foundTab = foundTabIndex > -1
       index = foundTab ? foundTabIndex : index;
       this.tabs.splice(index, foundTab ? 1 :  0, item);
