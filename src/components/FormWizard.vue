@@ -15,7 +15,7 @@
     <div class="wizard-navigation">
       <div class="wizard-progress-with-circle" v-if="!isVertical">
         <div class="wizard-progress-bar" :style="progressBarStyle"></div>
-      </div>
+      </div>      
       <ul
         class="wizard-nav wizard-nav-pills"
         role="tablist"
@@ -284,6 +284,7 @@ export default {
       this.$emit("update:startIndex", nextIndex);
     },
     addTab(item) {
+       
       /* const index = this.$.slots.default().length -1  */ //fix this part later
       const index = this.tabCount;
       item.tabId = `${item.title.replace(/ /g, "")}${index}`;
@@ -295,21 +296,27 @@ export default {
       }
     },
     removeTab(item) {
-      const tabs = this.tabs;
-      const index = tabs.indexOf(item);
-      if (index > -1) {
-        // Go one step back if the current step is removed
-        if (index === this.activeTabIndex) {
-          this.maxStep = this.activeTabIndex - 1;
-          this.changeTab(this.activeTabIndex, this.activeTabIndex - 1);
+      try {
+        const tabs = this.tabs;
+        const index = tabs.indexOf(item);
+        if (index > -1) {
+          // Go one step back if the current step is removed
+          if (index === this.activeTabIndex) {
+            this.maxStep = this.activeTabIndex - 1;
+            this.changeTab(this.activeTabIndex, this.activeTabIndex - 1);
+          }
+          if (index < this.activeTabIndex) {
+            this.maxStep = this.activeTabIndex - 1;
+            this.activeTabIndex = this.activeTabIndex - 1;
+            this.emitTabChange(this.activeTabIndex + 1, this.activeTabIndex);
+          }
+          tabs.splice(index, 1);
         }
-        if (index < this.activeTabIndex) {
-          this.maxStep = this.activeTabIndex - 1;
-          this.activeTabIndex = this.activeTabIndex - 1;
-          this.emitTabChange(this.activeTabIndex + 1, this.activeTabIndex);
-        }
-        tabs.splice(index, 1);
+      } catch (e) {
+        //do nothing
+        // console.log(e);
       }
+      
     },
     reset() {
       this.maxStep = 0;

@@ -772,10 +772,10 @@ enhanced-resolve@^5.10.0:
 es-module-lexer@^0.9.0:
   version "0.9.3"
 
-esbuild-windows-64@0.15.7:
+esbuild-linux-64@0.15.7:
   version "0.15.7"
-  resolved "https://registry.npmjs.org/esbuild-windows-64/-/esbuild-windows-64-0.15.7.tgz"
-  integrity sha512-7MI08Ec2sTIDv+zH6StNBKO+2hGUYIT42GmFyW6MBBWWtJhTcQLinKS6ldIN1d52MXIbiJ6nXyCJ+LpL4jBm3Q==
+  resolved "https://registry.npmjs.org/esbuild-linux-64/-/esbuild-linux-64-0.15.7.tgz"
+  integrity sha512-LxXEfLAKwOVmm1yecpMmWERBshl+Kv5YJ/1KnyAr6HRHFW8cxOEsEfisD3sVl/RvHyW//lhYUVSuy9jGEfIRAQ==
 
 esbuild@^0.15.6:
   version "0.15.7"
