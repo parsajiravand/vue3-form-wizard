@@ -71,65 +71,64 @@
     </a>
   </li>
 </template>
-<script>
-export default {
-  name: "wizard-step",
-  props: {
-    tab: {
-      type: Object,
-      default: () => {},
-    },
-    transition: {
-      type: String,
-      default: "",
-    },
-    index: {
-      type: Number,
-      default: 0,
-    },
-    disableBackOnClickStep: {
-      type: Boolean,
-      default: false,
-    },
-  },
+<script setup lang="ts">
+import { computed } from 'vue';
 
-  computed: {
-    iconActiveStyleBg() {
-      return {
-        backgroundColor: this.tab.color,
-      };
-    },
-    iconActiveStyle() {
-      if (!this.tab.active) {
-        return { color: this.tab.color };
-      }
-    },
-    stepCheckedStyle() {
-      return {
-        borderColor: this.tab.color,
-      };
-    },
-    errorStyle() {
-      return {
-        borderColor: this.tab.errorColor,
-        backgroundColor: this.tab.errorColor,
-      };
-    },
-    stepTitleStyle() {
-      let isError = this.tab.validationError;
-      return {
-        color: isError ? this.tab.errorColor : this.tab.color,
-      };
-    },
-    isStepSquare() {
-      return this.tab.shape === "square";
-    },
-    isTabShape() {
-      return this.tab.shape === "tab";
-    },
-    cursorStyle() {
-      return this.disableBackOnClickStep ? "cursor: default" : "";
-    },
-  },
-};
+const props = withDefaults(defineProps<{
+  tab: {
+    active: boolean;
+    checked: boolean;
+    validationError?: string | null;
+    color: string;
+    errorColor: string;
+    shape: string;
+    icon?: string;
+    customIcon?: string;
+    title: string;
+    tabId: string;
+  };
+  transition?: string;
+  index?: number;
+  disableBackOnClickStep?: boolean;
+}>(), {
+  transition: "",
+  index: 0,
+  disableBackOnClickStep: false,
+});
+
+// Computed properties
+const iconActiveStyleBg = computed(() => ({
+  backgroundColor: props.tab.color,
+}));
+
+const iconActiveStyle = computed(() => {
+  if (!props.tab.active) {
+    return { color: props.tab.color };
+  }
+  return {};
+});
+
+const stepCheckedStyle = computed(() => ({
+  borderColor: props.tab.color,
+}));
+
+const errorStyle = computed(() => ({
+  borderColor: props.tab.errorColor,
+  backgroundColor: props.tab.errorColor,
+}));
+
+const stepTitleStyle = computed(() => {
+  const isError = props.tab.validationError;
+  return {
+    color: isError ? props.tab.errorColor : props.tab.color,
+  };
+});
+
+const isStepSquare = computed(() => props.tab.shape === "square");
+
+const isTabShape = computed(() => props.tab.shape === "tab");
+
+const cursorStyle = computed(() =>
+  props.disableBackOnClickStep ? "cursor: default" : ""
+);
 </script>
