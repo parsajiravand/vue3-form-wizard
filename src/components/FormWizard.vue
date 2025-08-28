@@ -509,5 +509,5 @@ onMounted(() => {
 });
 </script>
 <style lang="scss">
-@import "../assets/wizard.scss";
+@use "../assets/wizard.scss";
 </style>

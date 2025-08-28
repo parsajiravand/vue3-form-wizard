@@ -1,5 +1,5 @@
-@import "mixins/wizard-size";
-@import "variables";
+@use "mixins/wizard-size" as *;
+@use "variables" as *;
 
 .vue-form-wizard {
   padding-bottom: 20px;
