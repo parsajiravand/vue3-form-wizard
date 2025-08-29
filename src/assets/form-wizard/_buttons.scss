@@ -1,3 +1,6 @@
+@use "variables" as *;
+@use "bs_variables" as *;
+
 .vue-form-wizard .wizard-btn,
 .vue-form-wizard .navbar .navbar-nav > li > a.wizard-btn {
   box-sizing: border-box;

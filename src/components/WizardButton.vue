@@ -3,8 +3,10 @@
     <slot></slot>
   </button>
 </template>
-<script>
-  export default {}
+
+<script setup lang="ts">
+// No props or logic needed for this simple component
 </script>
+
 <style>
 </style>

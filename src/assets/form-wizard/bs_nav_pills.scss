@@ -1,4 +1,4 @@
-@import "bs_variables";
+@use "bs_variables" as *;
 
 .vue-form-wizard *{
   box-sizing: border-box;
