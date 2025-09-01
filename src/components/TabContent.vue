@@ -10,7 +10,7 @@
   </div>
 </template>
 <script setup lang="ts">
-import { ref, computed, inject, onMounted, onBeforeUnmount, getCurrentInstance } from 'vue';
+import { ref, computed, inject, onMounted, onBeforeUnmount, getCurrentInstance, watch } from 'vue';
 
 const props = withDefaults(defineProps<{
   title?: string;
@@ -30,7 +30,7 @@ const props = withDefaults(defineProps<{
 });
 
 // Injected functions from parent FormWizard
-const addTab = inject<(tab: any) => void>('addTab');
+const addTab = inject<(tab: any, updateFn: (active: boolean) => void) => void>('addTab');
 const removeTab = inject<(tab: any) => void>('removeTab');
 
 // Reactive data
@@ -75,10 +75,15 @@ const tabObject = computed(() => ({
   shape: shape.value,
 }));
 
+// Function to update active state from FormWizard
+const updateActiveState = (newActive: boolean) => {
+  active.value = newActive;
+};
+
 // Lifecycle hooks
 onMounted(() => {
   if (addTab) {
-    addTab(tabObject.value);
+    addTab(tabObject.value, updateActiveState);
   }
 });
 

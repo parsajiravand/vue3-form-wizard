@@ -1,27 +1,17 @@
-<script lang="ts">
-import { defineComponent } from "@vue/runtime-core";
+<script setup lang="ts">
+import { ref, onMounted } from 'vue';
 import FormWizard from "./components/FormWizard.vue";
 import TabContent from "./components/TabContent.vue";
 import "/node_modules/vue3-form-wizard/dist/style.css";
 
-export default defineComponent({
-  components: {
-    FormWizard,
-    TabContent,
-  },
-  data() {
-    return {
-      image: "../public/favicon.ico",
-    };
-  },
-  mounted() {
-    console.log(this);
-  },
-  methods: {
-    onComplete() {
-      alert("Yay. Done!");
-    },
-  },
+const image = ref("../public/favicon.ico");
+
+const onComplete = () => {
+  alert("Yay. Done!");
+};
+
+onMounted(() => {
+  // App is ready
 });
 </script>
 
@@ -32,7 +22,11 @@ export default defineComponent({
       icon="fa fa-user"
       :customIcon="`<img  src='${image}' />`"
     >
+    <b>
+
       My first tab content
+    </b>
+   
     </tab-content>
     <tab-content title="Additional Info"> My second tab content </tab-content>
     <tab-content title="before step" icon="fa fa-check">

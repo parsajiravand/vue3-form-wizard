@@ -125,6 +125,7 @@ interface Tab {
   shape: string;
   icon?: string;
   customIcon?: string;
+  updateActiveState?: (active: boolean) => void;
 }
 
 
@@ -236,10 +237,14 @@ const emitTabChange = (prevIndex: number, nextIndex: number) => {
   emit("update:startIndex", nextIndex);
 };
 
-const addTab = (item: Tab) => {
+const addTab = (item: Tab, updateFn?: (active: boolean) => void) => {
   const index = tabCount.value;
   item.tabId = `${item.title.replace(/ /g, "")}${index}`;
-  tabs.value.splice(index, 0, item);
+
+  // Store the update function with the tab
+  const tabWithUpdate = { ...item, updateActiveState: updateFn };
+  tabs.value.splice(index, 0, tabWithUpdate);
+
   // if a step is added before the current one, go to it
   if (index < activeTabIndex.value + 1) {
     maxStep.value = index;
@@ -452,6 +457,10 @@ const checkRouteChange = (route: string) => {
 const deactivateTabs = () => {
   tabs.value.forEach((tab) => {
     tab.active = false;
+    // Call the update function if it exists
+    if (tab.updateActiveState) {
+      tab.updateActiveState(false);
+    }
   });
 };
 
@@ -461,6 +470,12 @@ const activateTab = (index: number) => {
   if (tab) {
     tab.active = true;
     tab.checked = true;
+
+    // Call the update function if it exists
+    if (tab.updateActiveState) {
+      tab.updateActiveState(true);
+    }
+
     tryChangeRoute(tab);
   }
 };
