@@ -106,7 +106,7 @@
   </div>
 </template>
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, provide } from 'vue'
+import { defineExpose, ref, computed, watch, onMounted, provide } from 'vue'
 import WizardButton from "./WizardButton.vue";
 import WizardStep from "./WizardStep.vue";
 import { isPromise, findElementAndFocus, getFocusedTabIndex } from "./helpers.js";
@@ -485,6 +485,24 @@ const initializeTabs = () => {
     );
   }
 };
+
+// Expose methods
+defineExpose({
+  emitTabChange,
+  addTab,
+  removeTab,
+  reset,
+  activateAll,
+  navigateToTab,
+  nextTab,
+  prevTab,
+  focusNextTab,
+  focusPrevTab,
+  changeTab,
+  deactivateTabs,
+  activateTab,
+  initializeTabs
+})
 
 // Provide functions to child components
 provide('addTab', addTab);
