@@ -327,10 +327,6 @@ const nextTab = () => {
     }
   };
   beforeTabChange(activeTabIndex.value, cb);
-  //if route go current route
-  if (tabs.value[activeTabIndex.value + 1]?.route) {
-    tryChangeRoute(tabs.value[activeTabIndex.value + 1]);
-  }
 };
 
 const prevTab = () => {
