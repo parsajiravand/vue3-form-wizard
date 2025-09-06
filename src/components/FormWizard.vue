@@ -107,9 +107,10 @@
 </template>
 <script setup lang="ts">
 import { defineExpose, ref, computed, watch, onMounted, onBeforeUnmount, provide, getCurrentInstance } from 'vue'
-import WizardButton from "./WizardButton.vue";
-import WizardStep from "./WizardStep.vue";
+import { default as WizardButton } from "./WizardButton.vue";
+import { default as WizardStep } from "./WizardStep.vue";
 import { isPromise, findElementAndFocus, getFocusedTabIndex } from "./helpers.js";
+
 
 interface Tab {
   tabId: string;
@@ -187,6 +188,14 @@ const activeTabIndex = ref(0);
 const maxStep = ref(0);
 const loading = ref(false);
 const tabs = ref<Tab[]>([]);
+
+// Store component instance for later use
+let componentInstance: any = null;
+
+// Get and store the component instance
+componentInstance = getCurrentInstance();
+console.log('Component instance captured:', !!componentInstance);
+console.log('Router available in global properties:', !!componentInstance?.appContext?.config?.globalProperties?.$router);
 
 // Computed properties
 const tabCount = computed(() => tabs.value.length);
@@ -310,13 +319,18 @@ const navigateToTab = (index: number): boolean => {
 const nextTab = () => {
   const cb = () => {
     if (activeTabIndex.value < tabCount.value - 1) {
-      changeTab(activeTabIndex.value, activeTabIndex.value + 1);
-      afterTabChange(activeTabIndex.value);
+      const newIndex = activeTabIndex.value + 1;
+      changeTab(activeTabIndex.value, newIndex);
+      afterTabChange(newIndex);
     } else {
       emit("on-complete");
     }
   };
   beforeTabChange(activeTabIndex.value, cb);
+  //if route go current route
+  if (tabs.value[activeTabIndex.value + 1]?.route) {
+    tryChangeRoute(tabs.value[activeTabIndex.value + 1]);
+  }
 };
 
 const prevTab = () => {
@@ -434,13 +448,55 @@ const changeTab = (oldIndex: number, newIndex: number, emitChangeEvent = true) =
 
 const tryChangeRoute = (tab: Tab) => {
   if (tab.route && typeof tab.route === 'string') {
-    const instance = getCurrentInstance();
-    const router = instance?.appContext.config.globalProperties.$router;
+    const instance = componentInstance;
+
+    if (!instance) {
+      console.warn('Component instance not available for route navigation');
+      return;
+    }
+
+    // Try multiple ways to access the router
+    let router = null;
+
+    // Method 1: Through global properties
+    if (instance?.appContext.config.globalProperties.$router) {
+      router = instance.appContext.config.globalProperties.$router;
+    }
+
+    // Method 2: Through proxy (in case it's injected)
+    if (!router && instance?.proxy?.$router) {
+      router = instance.proxy.$router;
+    }
+
+    // Method 3: Through app context
+    if (!router && instance?.appContext.app && '$router' in instance.appContext.app) {
+      router = (instance.appContext.app as any).$router;
+    }
+
+    // Method 4: Try to inject router
+    if (!router) {
+      try {
+        const injectedRouter = (instance?.provides?.$router) || (instance?.parent?.provides?.$router);
+        if (injectedRouter) {
+          router = injectedRouter;
+        }
+      } catch (e) {
+        console.log('Injection method failed:', e);
+      }
+    }
 
     if (router) {
-      router.push(tab.route);
+      // Only push if the route is different from current route
+      const currentRoute = instance?.appContext.config.globalProperties.$route?.path ||
+                          instance?.proxy?.$route?.path ||
+                          (instance?.appContext.app && '$route' in instance.appContext.app ? (instance.appContext.app as any).$route?.path : undefined);
+
+      if (currentRoute !== tab.route) {
+        router.push(tab.route).catch(err => {
+          console.warn('Route navigation failed:', err);
+        });
+      }
     } else {
-      // Fallback: try to use Vue Router from parent component
       console.warn('Vue Router not found. Make sure to install vue-router and use app.use(router)');
     }
   }
@@ -543,17 +599,33 @@ const currentRoute = ref('');
 let routeWatcher: any = null;
 
 const setupRouteWatching = () => {
-  const instance = getCurrentInstance();
-  const router = instance?.appContext.config.globalProperties.$router;
-  const route = instance?.appContext.config.globalProperties.$route;
+  const instance = componentInstance;
 
-  if (router && route) {
+  if (!instance) {
+    console.warn('Component instance not available for route watching');
+    return;
+  }
+
+  // Try multiple ways to access route
+  let route = null;
+
+  if (instance?.appContext.config.globalProperties.$route) {
+    route = instance.appContext.config.globalProperties.$route;
+  } else if (instance?.proxy?.$route) {
+    route = instance.proxy.$route;
+  } else if (instance?.appContext.app && '$route' in instance.appContext.app) {
+    route = (instance.appContext.app as any).$route;
+  }
+
+  if (route) {
     // Watch for route changes
     routeWatcher = watch(
       () => route.path,
       (newPath) => {
-        currentRoute.value = newPath;
-        checkRouteChange(newPath);
+        if (newPath !== currentRoute.value) {
+          currentRoute.value = newPath;
+          checkRouteChange(newPath);
+        }
       },
       { immediate: true }
     );

@@ -8,5 +8,9 @@
 // No props or logic needed for this simple component
 </script>
 
+<script lang="ts">
+export default {};
+</script>
+
 <style>
 </style>

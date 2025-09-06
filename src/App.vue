@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted } from "vue";
 import FormWizard from "./components/FormWizard.vue";
 import TabContent from "./components/TabContent.vue";
 import "/node_modules/vue3-form-wizard/dist/style.css";
@@ -16,26 +16,22 @@ onMounted(() => {
 </script>
 
 <template>
-  <form-wizard @on-complete="onComplete" color="#9b59b6">
-    <tab-content
-      title="Personal details"
-      icon="fa fa-user"
-      :customIcon="`<img  src='${image}' />`"
-    >
-    <b>
-
-      My first tab content
-    </b>
-   
-    </tab-content>
-    <tab-content title="Additional Info"> My second tab content </tab-content>
-    <tab-content title="before step" icon="fa fa-check">
-      Yuhuuu! This seems pretty damn simple
-    </tab-content>
-    <tab-content title="Last step" icon="fa fa-check">
-      Yuhuuu! This seems pretty damn simple
-    </tab-content>
-  </form-wizard>
+  <div>
+    <form-wizard @on-complete="onComplete" color="#9b59b6">
+      <tab-content title="Personal details" icon="fa fa-user">
+        <div>First Step</div>
+      </tab-content>
+      <tab-content title="Additional Info">
+        <div>Second Step</div>
+      </tab-content>
+      <tab-content title="before step" icon="fa fa-step-forward">
+        <div>Third Step</div>
+      </tab-content>
+      <tab-content title="Last step" icon="fa fa-check">
+        <div>Last Step</div>
+      </tab-content>
+    </form-wizard>
+  </div>
 </template>
 
 <style>
