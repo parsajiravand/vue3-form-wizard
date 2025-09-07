@@ -106,7 +106,7 @@
   </div>
 </template>
 <script setup lang="ts">
-import { defineExpose, ref, computed, watch, onMounted, provide } from 'vue'
+import { defineExpose, ref, computed, watch, onMounted, onBeforeUnmount, provide, getCurrentInstance } from 'vue'
 import WizardButton from "./WizardButton.vue";
 import WizardStep from "./WizardStep.vue";
 import { isPromise, findElementAndFocus, getFocusedTabIndex } from "./helpers.js";
@@ -433,9 +433,17 @@ const changeTab = (oldIndex: number, newIndex: number, emitChangeEvent = true) =
 };
 
 const tryChangeRoute = (tab: Tab) => {
-  // Note: In Vue 3 setup, we need to access router differently
-  // This would need to be handled by the consuming component
-  console.warn('Route navigation needs to be handled by parent component in Composition API');
+  if (tab.route && typeof tab.route === 'string') {
+    const instance = getCurrentInstance();
+    const router = instance?.appContext.config.globalProperties.$router;
+
+    if (router) {
+      router.push(tab.route);
+    } else {
+      // Fallback: try to use Vue Router from parent component
+      console.warn('Vue Router not found. Make sure to install vue-router and use app.use(router)');
+    }
+  }
 };
 
 const checkRouteChange = (route: string) => {
@@ -530,15 +538,40 @@ watch(() => props.startIndex, (newStartIndex) => {
   }
 });
 
-// Route watching (simplified - would need proper router integration)
-const route = ref('');
-watch(route, (newRoute) => {
-  checkRouteChange(newRoute);
-});
+// Route watching with proper Vue Router integration
+const currentRoute = ref('');
+let routeWatcher: any = null;
+
+const setupRouteWatching = () => {
+  const instance = getCurrentInstance();
+  const router = instance?.appContext.config.globalProperties.$router;
+  const route = instance?.appContext.config.globalProperties.$route;
+
+  if (router && route) {
+    // Watch for route changes
+    routeWatcher = watch(
+      () => route.path,
+      (newPath) => {
+        currentRoute.value = newPath;
+        checkRouteChange(newPath);
+      },
+      { immediate: true }
+    );
+  } else {
+    console.warn('Vue Router not detected. Route-based navigation will not work.');
+  }
+};
 
 // Lifecycle
 onMounted(() => {
   initializeTabs();
+  setupRouteWatching();
+});
+
+onBeforeUnmount(() => {
+  if (routeWatcher) {
+    routeWatcher();
+  }
 });
 </script>
 <style lang="scss">
