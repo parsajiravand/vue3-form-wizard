@@ -194,8 +194,6 @@ let componentInstance: any = null;
 
 // Get and store the component instance
 componentInstance = getCurrentInstance();
-console.log('Component instance captured:', !!componentInstance);
-console.log('Router available in global properties:', !!componentInstance?.appContext?.config?.globalProperties?.$router);
 
 // Computed properties
 const tabCount = computed(() => tabs.value.length);
