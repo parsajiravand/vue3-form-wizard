@@ -8,7 +8,6 @@ import pkg from "./package.json";
 export default defineConfig({
   build: {
     lib: {
-      banner,
       entry: path.resolve(__dirname, "src/index.ts"),
       name: "Vue3FormWizard",
       fileName: (format) => `vue3-form-wizard.${format}.js`,
@@ -16,8 +15,6 @@ export default defineConfig({
     rollupOptions: {
       external: ["vue"],
       output: {
-        // Provide global variables to use in the UMD build
-        // Add external deps here
         globals: {
           vue: "Vue",
         },
@@ -35,4 +32,8 @@ export default defineConfig({
  */
 `),
   ],
+  test: {
+    environment: "jsdom",
+    globals: true,
+  },
 });

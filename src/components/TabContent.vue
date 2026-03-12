@@ -33,10 +33,8 @@ const props = withDefaults(defineProps<{
 const addTab = inject<(tab: any, updateFn: (active: boolean) => void) => void>('addTab');
 const removeTab = inject<(tab: any) => void>('removeTab');
 
-// Reactive data
+// Reactive data (driven by FormWizard via updateActiveState)
 const active = ref(false);
-const validationError = ref<string | null>(null);
-const checked = ref(false);
 const tabId = ref('');
 
 // Get current instance for accessing parent
@@ -58,7 +56,7 @@ const errorColor = computed(() => {
   return parent?.props?.errorColor || '#8b0000';
 });
 
-// Create tab object to pass to parent
+// Create tab object to pass to parent (FormWizard manages active/checked/validationError)
 const tabObject = computed(() => ({
   title: props.title,
   icon: props.icon,
@@ -66,18 +64,22 @@ const tabObject = computed(() => ({
   beforeChange: props.beforeChange,
   afterChange: props.afterChange,
   route: props.route,
-  active: active.value,
-  checked: checked.value,
-  validationError: validationError.value,
+  active: false,
+  checked: false,
+  validationError: null as string | null,
   tabId: tabId.value,
   color: color.value,
   errorColor: errorColor.value,
   shape: shape.value,
 }));
 
-// Function to update active state from FormWizard
-const updateActiveState = (newActive: boolean) => {
+// Function to update active state (and initial tabId) from FormWizard
+const updateActiveState = (newActive: boolean, newTabId?: string) => {
   active.value = newActive;
+
+  if (newTabId && !tabId.value) {
+    tabId.value = newTabId;
+  }
 };
 
 // Lifecycle hooks

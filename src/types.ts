@@ -82,6 +82,8 @@ export interface FormWizardSlotProps {
   activeTabIndex: number;
   isLastStep: boolean;
   fillButtonStyle: Record<string, string>;
+  tabs: Tab[];
+  tabCount: number;
 }
 
 // Helper function types
