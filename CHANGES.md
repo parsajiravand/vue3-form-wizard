@@ -6,6 +6,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0] - 2025-03
+### Added
+- **Schema mode**: Declarative API with `schema`, `schema-components`, and `v-model` for shared wizard data
+- Schema step support for `condition` (hide steps dynamically) and `validate` (block navigation)
+- Richer slot props: `tabs`, `tabCount`, `wizardData`, `updateWizardData`
+- 15 local samples in `App.vue`: basic, icons, layouts, shapes, validation, schema mode
+- Test suite: Vitest + Vue Test Utils (navigation, validation, router, accessibility, TabContent, WizardStep)
+- `jsdom` and `vue-router` as devDependencies for tests
+- `npm run test` script
+- Vue JSX plugin for `.tsx` test files
+- Improved accessibility: unified IDs, ARIA linkage, keyboard navigation (left/right keys)
+- Vue Router support for string and location-object `route` props
+- SSR safeguards: guarded DOM access when `document` is unavailable
+- Stable per-instance `wizardId` generation
+- Type re-exports for `FormWizardSchema`, `WizardData`, etc.
+
+### Changed
+- Router integration: normalized route handling, no-op when vue-router not installed
+- FormWizard as single source of truth for `active`, `checked`, `validationError`; TabContent uses callbacks
+- Clarified packaging: `sideEffects` for styles, `types` entry in package.json
+
+### Migration
+- Classic slot mode and `route` strings remain supported
+- Schema mode is optional; omit `schema` to use classic flow
+- Ensure vue-router v4 is installed for URL ↔ tab sync
+
 ## [0.3.2] - 2025-09-06
 ### Added
 - Vue Router integration for automatic route synchronization

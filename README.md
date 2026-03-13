@@ -51,19 +51,47 @@ yarn add vue3-form-wizard
 ```
 ## 🚀 Features
 
-- 🎪 [**Interactive docs & demos**](https://vue3-form-wizard-document.netlify.app/demos/)
-- 🦾 **Type Strong**: Written in [Typescript](https://www.typescriptlang.org/), with [TS Docs](https://github.com/microsoft/tsdoc)
-- 🌎 **No bundler required**: Usable via CDN
-- 🔩 **Flexible**: Configurable event filters and targets
+- **Schema mode**: Declarative steps with `schema`, `condition`, `validate`, and `v-model`
+- **Classic mode**: Slot-based steps with `<tab-content>`
+- **Vue Router**: URL sync with `route` prop (optional)
+- **Accessibility**: ARIA roles, keyboard navigation
+- **TypeScript**: Full type support
 
 ## 🔧 [**Document**](https://vue3-form-wizard-document.netlify.app/usage/)
 
-- ➡️ [**Usagae**](https://vue3-form-wizard-document.netlify.app/usage/)
+- ➡️ [**Usage**](https://vue3-form-wizard-document.netlify.app/usage/)
 - ➡️ [**Props**](https://vue3-form-wizard-document.netlify.app/props/)
 - ➡️ [**Slots**](https://vue3-form-wizard-document.netlify.app/slots/)
-- ➡️ [**Methods**](https://vue3-form-wizard-document.netlify.app/Mmthods/)
+- ➡️ [**Methods**](https://vue3-form-wizard-document.netlify.app/methods/)
 - ➡️ [**Scoped-slots**](https://vue3-form-wizard-document.netlify.app/scoped-slots/)
 - ➡️ [**Demos**](https://vue3-form-wizard-document.netlify.app/demos/)
+
+## Quick start
+
+```vue
+<script setup>
+import FormWizard, { TabContent } from 'vue3-form-wizard'
+import 'vue3-form-wizard/dist/style.css'
+
+const onComplete = () => alert('Done!')
+</script>
+
+<template>
+  <form-wizard @on-complete="onComplete" color="#9b59b6">
+    <tab-content title="Step 1">
+      <p>First step content.</p>
+    </tab-content>
+    <tab-content title="Step 2">
+      <p>Second step content.</p>
+    </tab-content>
+    <tab-content title="Step 3">
+      <p>Final step.</p>
+    </tab-content>
+  </form-wizard>
+</template>
+```
+
+Register globally or use components locally; include the CSS. See [Schema mode](#schema-mode) and [Router Integration](#-router-integration) for more.
 
 ## 🔗 Router Integration
 
@@ -126,47 +154,75 @@ The `route` prop accepts:
 - **String**: `route="/step1"` - Direct path
 - **Object**: `route="{ name: 'step1', params: { id: 1 } }"` - Named routes with params
 
-### Testing Router Functionality
+## Schema Mode
 
-A router test script is included to verify your setup:
+Define wizard steps declaratively with conditions and validation:
 
-```bash
-# Run the router test
-node test-router.js
+```vue
+<script setup>
+import FormWizard, { type FormWizardSchema, type WizardData } from 'vue3-form-wizard';
+import MyStep from './MyStep.vue';
+
+const schema = {
+  initialData: { plan: 'basic' },
+  steps: [
+    { id: 'intro', title: 'Intro', component: 'MyStep' },
+    {
+      id: 'premium',
+      title: 'Premium',
+      component: 'PremiumStep',
+      condition: ({ data }) => data.plan === 'premium',
+    },
+    {
+      id: 'review',
+      title: 'Review',
+      component: 'ReviewStep',
+      validate: ({ data }) => (data.plan ? true : 'Select a plan'),
+    },
+  ],
+};
+
+const data = ref({ plan: 'basic' });
+</script>
+
+<template>
+  <form-wizard
+    :schema="schema"
+    :schema-components="{ MyStep, PremiumStep, ReviewStep }"
+    v-model="data"
+    @on-complete="handleComplete"
+  />
+</template>
 ```
 
-The test will check:
-- ✅ Vue Router installation
-- ✅ Router configuration
-- ✅ Route definitions
-- ✅ Component integration
+Step components receive `data` and `update-data` props. Use `condition` to hide steps dynamically and `validate` to block navigation.
 
-### Demo
+## Local Samples & Tests
 
-The project includes a complete demo with router integration. Run:
+Run the dev server for 15 samples:
 
 ```bash
 npm run dev
 ```
 
-Then visit `http://localhost:5173` to see:
-- RouterTest component showing current route
-- Navigation buttons for testing
-- Route history tracking
-- Automatic URL updates when switching tabs
+Visit `http://localhost:5173` and use the dropdown to switch between samples: basic wizard, icons, layouts, shapes, validation, schema mode, and more.
+
+Run tests:
+
+```bash
+npm run test
+```
 
 
 
-## Until the version is completely stable
-- [x] Updated To Vue3 ✅
-- [x] Setup with Vite ✅
-- [x] Add declaration type(Typescript Support)✅
-- [ ] Fix All Issue on vue-form-wizard 🚧
-- [x] Rewrite With Setup Function and ts ✅
-- [ ] Setup New Features🚧
-- [x] Setup New Documentation ✅
+## Scripts
 
-### This is a cloned package from  [vue-form-wizard](https://github.com/BinarCode/vue-form-wizard).Updated to vue 3 with new features and bug fixes
+| Command      | Description                |
+|-------------|----------------------------|
+| `npm run dev`   | Start dev server with samples |
+| `npm run build` | Build library and types     |
+| `npm run test`  | Run Vitest test suite       |
 
+## Credits
 
-#### [Old Documentation](https://binarcode.github.io/vue-form-wizard/#/)
+Cloned from [vue-form-wizard](https://github.com/BinarCode/vue-form-wizard), updated to Vue 3 with new features and bug fixes.
