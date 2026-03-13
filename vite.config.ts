@@ -1,5 +1,6 @@
 import { defineConfig } from "vite";
 import vue from "@vitejs/plugin-vue";
+import vueJsx from "@vitejs/plugin-vue-jsx";
 import path from "path";
 import banner from "vite-plugin-banner";
 import pkg from "./package.json";
@@ -23,6 +24,7 @@ export default defineConfig({
   },
   plugins: [
     vue(),
+    vueJsx(),
     banner(`/*
  * ${pkg.name}
  * Creator:${pkg.author}

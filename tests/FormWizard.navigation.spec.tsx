@@ -48,5 +48,4 @@ describe("FormWizard - navigation", () => {
 
     expect((wrapper.vm as any).activeTabIndex).toBe(0);
   });
-}
-
+});

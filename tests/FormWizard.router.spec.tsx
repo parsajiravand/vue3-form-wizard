@@ -1,4 +1,4 @@
-import { mount } from "@vue/test-utils";
+import { mount, flushPromises } from "@vue/test-utils";
 import { createRouter, createWebHistory } from "vue-router";
 import FormWizard from "../src/components/FormWizard.vue";
 import TabContent from "../src/components/TabContent.vue";
@@ -55,9 +55,9 @@ describe("FormWizard - router integration", () => {
     const { wrapper, router } = await createWrapper();
 
     (wrapper.vm as any).nextTab();
+    await flushPromises();
     await router.isReady();
 
     expect(router.currentRoute.value.path).toBe("/step2");
   });
 });
-

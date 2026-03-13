@@ -41,4 +41,3 @@ describe("FormWizard - validation hooks", () => {
     expect((wrapper.vm as any).activeTabIndex).toBe(0);
   });
 });
-

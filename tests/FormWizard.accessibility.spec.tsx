@@ -2,8 +2,10 @@ import { mount } from "@vue/test-utils";
 import FormWizard from "../src/components/FormWizard.vue";
 import TabContent from "../src/components/TabContent.vue";
 
+import { flushPromises } from "@vue/test-utils";
+
 describe("FormWizard - accessibility", () => {
-  it("renders tabs and panels with correct roles and aria attributes", () => {
+  it("renders tabs and panels with correct roles and aria attributes", async () => {
     const wrapper = mount(FormWizard, {
       slots: {
         default: [
@@ -32,6 +34,8 @@ describe("FormWizard - accessibility", () => {
       },
     });
 
+    await flushPromises();
+
     const tablist = wrapper.find('[role="tablist"]');
     expect(tablist.exists()).toBe(true);
 
@@ -49,4 +53,3 @@ describe("FormWizard - accessibility", () => {
     }
   });
 });
-

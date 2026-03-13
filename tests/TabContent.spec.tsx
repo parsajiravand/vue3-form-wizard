@@ -1,4 +1,4 @@
-import { mount } from "@vue/test-utils";
+import { mount, flushPromises } from "@vue/test-utils";
 import FormWizard from "../src/components/FormWizard.vue";
 import TabContent from "../src/components/TabContent.vue";
 
@@ -21,9 +21,10 @@ describe("TabContent", () => {
       },
     });
 
+    await flushPromises();
+
     const panels = wrapper.findAll('[role="tabpanel"]');
     expect(panels.length).toBe(1);
     expect(panels[0].attributes("aria-hidden")).toBe("false");
   });
 });
-

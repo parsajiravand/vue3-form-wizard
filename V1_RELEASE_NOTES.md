@@ -2,6 +2,7 @@
 
 ### Highlights
 
+- **Schema mode**: new declarative API for defining steps, conditions, validation, and components via a `schema` prop, without `<tab-content>` children.
 - **Stable Vue Router integration** with support for both string paths and route location objects on `route` props.
 - **Improved accessibility**: consistent IDs, ARIA wiring, and keyboard navigation between steps and panels.
 - **More robust core**: safer DOM access and clearer tab state management, preparing the library for broader usage contexts.
@@ -17,6 +18,16 @@
   - Uses a centralized helper to read the current route from either `vue-router` or app global properties.
   - Triggers tab changes when the URL changes (back/forward or direct navigation) and a matching tab `route` is found.
   - Becomes a no-op (with a dev-only warning) when `vue-router` is not installed so the component can still be used without a router.
+
+### Schema mode
+
+- **Schema-only configuration**: when `schema` is provided and no `<tab-content>` children are used, `FormWizard` runs in schema mode.
+- **Declarative steps**: each step in `schema.steps` supports `id`, `title`, `component`, `icon`, `customIcon`, `route`, `condition`, and `validate`:
+  - `condition`: `(ctx) => boolean | Promise<boolean>` — hides the step when it returns `false`; re-evaluated when `wizardData` changes.
+  - `validate`: `(ctx) => boolean | string | Promise<boolean | string>` — runs before navigating away; return `true` to allow, or a string for an error message.
+- **Shared wizard data**: `wizardData` and `updateWizardData` are passed to step components as `data` and `update-data` props; bind with `v-model` for two-way sync.
+- **Component mapping**: pass `schemaComponents` as a map of step `component` (or `id`) keys to Vue components; the active step is resolved via `currentSchemaComponent`.
+- **Backward compatible**: classic slot-based mode and `addTab` / `initializeTabs` continue to work unchanged when no schema is provided.
 
 ### IDs, ARIA, and keyboard navigation
 
@@ -82,6 +93,8 @@
   - Extended the `slotProps` provided by `FormWizard` to include:
     - `tabs`: the internal tab array.
     - `tabCount`: total number of tabs.
+    - `wizardData`: reactive wizard data (used by schema mode; also available to slot consumers).
+    - `updateWizardData`: function to update wizard data and emit `update:modelValue`.
     - In addition to the existing `nextTab`, `prevTab`, `activeTabIndex`, `isLastStep`, and `fillButtonStyle`.
   - Updated the `FormWizardSlotProps` type in `src/types.ts` accordingly so TypeScript users get full IntelliSense for these values.
 - **Validation error model (foundation)**:
@@ -96,6 +109,7 @@
 - Existing basic usage continues to work:
   - `route` props that were strings are still supported.
   - Default slot structure (`<form-wizard><tab-content ... /></form-wizard>`) and public props/events remain the same.
+- **Schema mode** is optional: use `schema`, `schema-components`, and `v-model` when you prefer declarative step config; omit `schema` to keep the classic slot-based flow.
 - If you relied on undocumented or internal behaviors:
   - The exact shape of internal tab objects (`Tab`) is now more clearly managed by `FormWizard`, and `TabContent` no longer maintains its own `checked` / `validationError` copies.
   - Keyboard focus helpers now assume the `step-${tabId}` id convention; custom markup that diverges from that pattern should align with the default `WizardStep` structure.
