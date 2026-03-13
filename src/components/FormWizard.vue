@@ -49,7 +49,18 @@
         </slot>
       </ul>
       <div class="wizard-tab-content">
-        <slot v-bind="slotProps"> </slot>
+        <!-- Schema mode: render active step component if provided -->
+        <template v-if="schema && schemaComponents && currentSchemaComponent">
+          <component
+            :is="currentSchemaComponent"
+            :data="wizardData"
+            :update-data="updateWizardData"
+          />
+        </template>
+
+        <!-- Classic mode, or when no schema / component is found -->
+        <slot v-else v-bind="slotProps">
+        </slot>
       </div>
     </div>
 
@@ -107,6 +118,7 @@
 </template>
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onBeforeUnmount, provide, getCurrentInstance } from 'vue'
+import type { FormWizardSchema, WizardData } from "../types";
 import { default as WizardButton } from "./WizardButton.vue";
 import { default as WizardStep } from "./WizardStep.vue";
 import { isPromise, findElementAndFocus, getFocusedTabIndex } from "./helpers.js";
@@ -150,6 +162,9 @@ const props = withDefaults(defineProps<{
   startIndex?: number;
   disableBackOnClickStep?: boolean;
   disableBack?: boolean;
+  schema?: FormWizardSchema;
+  modelValue?: WizardData;
+  schemaComponents?: Record<string, any>;
 }>(), {
   id: undefined,
   title: "Awesome Wizard",
@@ -184,6 +199,7 @@ const emit = defineEmits({
   'on-loading': (loading: boolean) => true,
   'on-error': (error: any) => true,
   'on-validate': (result: boolean, index: number) => true,
+  'update:modelValue': (data: WizardData) => true,
 });
 
 // Reactive state
@@ -192,9 +208,74 @@ const maxStep = ref(0);
 const loading = ref(false);
 const tabs = ref<Tab[]>([]);
 
+// Shared wizard data (used in schema mode and optionally in classic mode)
+const wizardData = ref<WizardData>({
+  ...(props.schema?.initialData || {}),
+  ...(props.modelValue || {}),
+});
+
+const updateWizardData = (partial: Record<string, any>) => {
+  wizardData.value = {
+    ...wizardData.value,
+    ...partial,
+  };
+  emit("update:modelValue", wizardData.value);
+};
+
+// Schema mode helpers
+const useSchemaMode = computed(() => !!props.schema);
+const rawSchemaSteps = computed(() => props.schema?.steps || []);
+
+const visibleSchemaSteps = computed(() => {
+  if (!props.schema) return [];
+
+  return rawSchemaSteps.value.filter((step, index) => {
+    if (!step.condition) return true;
+
+    const ctx = {
+      data: wizardData.value,
+      stepId: step.id,
+      index,
+    };
+
+    const result = step.condition(ctx);
+
+    if (isPromise(result)) {
+      // For v1 keep it simple: async conditions are treated as truthy by default,
+      // and should be expressed via validate instead.
+      return true;
+    }
+
+    return result === true;
+  });
+});
+
+const currentSchemaStep = computed(() => {
+  if (!useSchemaMode.value) return null;
+  return visibleSchemaSteps.value[activeTabIndex.value] || null;
+});
+
+const currentSchemaComponent = computed(() => {
+  const step = currentSchemaStep.value;
+  if (!step || !props.schemaComponents) return null;
+
+  const key = step.component || step.id;
+  return props.schemaComponents[key] || null;
+});
+
 // Store component instance and router references for later use
 let componentInstance: any = getCurrentInstance();
 let routerInstance: any = null;
+
+// Keep wizardData in sync when modelValue is controlled from the parent
+watch(
+  () => props.modelValue,
+  (newVal) => {
+    if (newVal) {
+      wizardData.value = { ...newVal };
+    }
+  }
+);
 
 const resolveRouterInstance = () => {
   if (!componentInstance) {
@@ -284,6 +365,8 @@ const slotProps = computed(() => ({
   fillButtonStyle: fillButtonStyle.value,
   tabs: tabs.value,
   tabCount: tabCount.value,
+  wizardData: wizardData.value,
+  updateWizardData,
 }));
 
 // Methods
@@ -309,6 +392,38 @@ const addTab = (item: Tab, updateFn?: (active: boolean, tabId?: string) => void)
   if (index < activeTabIndex.value + 1) {
     maxStep.value = index;
     changeTab(activeTabIndex.value + 1, index);
+  }
+};
+
+const rebuildTabsFromSchema = () => {
+  if (!useSchemaMode.value) return;
+
+  tabs.value = visibleSchemaSteps.value.map((step, index) => {
+    const title = step.title || `Step ${index + 1}`;
+
+    const tab: Tab = {
+      tabId: `${step.id || title.replace(/ /g, "")}${index}`,
+      title,
+      active: index === activeTabIndex.value,
+      checked: index <= activeTabIndex.value,
+      validationError: null,
+      beforeChange: undefined,
+      afterChange: undefined,
+      route: step.route,
+      color: props.color,
+      errorColor: props.errorColor,
+      shape: props.shape,
+      icon: step.icon,
+      customIcon: step.customIcon,
+      updateActiveState: undefined,
+    };
+
+    return tab;
+  });
+
+  // Clamp active index if needed
+  if (activeTabIndex.value >= tabs.value.length) {
+    activeTabIndex.value = Math.max(0, tabs.value.length - 1);
   }
 };
 
@@ -459,6 +574,56 @@ const beforeTabChange = (index: number, callback: () => void) => {
   if (loading.value) {
     return;
   }
+
+  // Schema-mode validation
+  if (useSchemaMode.value && props.schema) {
+    const schemaStep = visibleSchemaSteps.value[index];
+    if (schemaStep && schemaStep.validate) {
+      const ctx = {
+        data: wizardData.value,
+        stepId: schemaStep.id,
+        index,
+      };
+
+      const result = schemaStep.validate(ctx);
+
+      if (isPromise(result)) {
+        setLoading(true);
+        (result as Promise<boolean | string>)
+          .then((res) => {
+            setLoading(false);
+            if (res === true) {
+              executeBeforeChange(true, callback);
+            } else {
+              const message = res === false ? "Validation failed" : res;
+              if (tabs.value[index]) {
+                tabs.value[index].validationError = String(message);
+              }
+              emit("on-error", message);
+              executeBeforeChange(false, () => {});
+            }
+          })
+          .catch((error) => {
+            setLoading(false);
+            setValidationError(error);
+          });
+      } else {
+        if (result === true) {
+          executeBeforeChange(true, callback);
+        } else {
+          const message = result === false ? "Validation failed" : result;
+          if (tabs.value[index]) {
+            tabs.value[index].validationError = String(message);
+          }
+          emit("on-error", message);
+          executeBeforeChange(false, () => {});
+        }
+      }
+      return;
+    }
+  }
+
+  // Classic per-tab beforeChange
   const oldTab = tabs.value[index];
   if (oldTab && oldTab.beforeChange !== undefined) {
     const tabChangeRes = oldTab.beforeChange();
@@ -661,6 +826,34 @@ watch(() => props.startIndex, (newStartIndex) => {
   }
 });
 
+// Rebuild tabs when schema definition changes
+watch(
+  () => props.schema,
+  () => {
+    if (useSchemaMode.value) {
+      rebuildTabsFromSchema();
+    }
+  },
+  { deep: true }
+);
+
+// Re-run conditions when wizard data changes in schema mode
+watch(
+  () => wizardData.value,
+  () => {
+    if (useSchemaMode.value) {
+      const prevActiveId = tabs.value[activeTabIndex.value]?.tabId;
+      rebuildTabsFromSchema();
+      // Try to keep the same step active if still visible
+      const newIndex = tabs.value.findIndex((t) => t.tabId === prevActiveId);
+      if (newIndex !== -1) {
+        activateTabAndCheckStep(newIndex);
+      }
+    }
+  },
+  { deep: true }
+);
+
 // Route watching with proper Vue Router integration
 const currentRoute = ref('');
 let routeWatcher: any = null;
@@ -703,7 +896,14 @@ const setupRouteWatching = () => {
 
 // Lifecycle
 onMounted(() => {
-  initializeTabs();
+  if (useSchemaMode.value) {
+    rebuildTabsFromSchema();
+    if (tabs.value.length > 0) {
+      activateTabAndCheckStep(activeTabIndex.value);
+    }
+  } else {
+    initializeTabs();
+  }
   setupRouteWatching();
 });
 
