@@ -132,3 +132,7 @@ const cursorStyle = computed(() =>
   props.disableBackOnClickStep ? "cursor: default" : ""
 );
 </script>
+
+<script lang="ts">
+export default {};
+</script>

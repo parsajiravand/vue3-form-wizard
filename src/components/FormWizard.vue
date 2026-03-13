@@ -49,7 +49,18 @@
         </slot>
       </ul>
       <div class="wizard-tab-content">
-        <slot v-bind="slotProps"> </slot>
+        <!-- Schema mode: render active step component if provided -->
+        <template v-if="schema && schemaComponents && currentSchemaComponent">
+          <component
+            :is="currentSchemaComponent"
+            :data="wizardData"
+            :update-data="updateWizardData"
+          />
+        </template>
+
+        <!-- Classic mode, or when no schema / component is found -->
+        <slot v-else v-bind="slotProps">
+        </slot>
       </div>
     </div>
 
@@ -106,10 +117,12 @@
   </div>
 </template>
 <script setup lang="ts">
-import { defineExpose, ref, computed, watch, onMounted, onBeforeUnmount, provide, getCurrentInstance } from 'vue'
-import WizardButton from "./WizardButton.vue";
-import WizardStep from "./WizardStep.vue";
+import { ref, computed, watch, onMounted, onBeforeUnmount, provide, getCurrentInstance } from 'vue'
+import type { FormWizardSchema, WizardData } from "../types";
+import { default as WizardButton } from "./WizardButton.vue";
+import { default as WizardStep } from "./WizardStep.vue";
 import { isPromise, findElementAndFocus, getFocusedTabIndex } from "./helpers.js";
+
 
 interface Tab {
   tabId: string;
@@ -125,7 +138,7 @@ interface Tab {
   shape: string;
   icon?: string;
   customIcon?: string;
-  updateActiveState?: (active: boolean) => void;
+  updateActiveState?: (active: boolean, tabId?: string) => void;
 }
 
 
@@ -149,6 +162,9 @@ const props = withDefaults(defineProps<{
   startIndex?: number;
   disableBackOnClickStep?: boolean;
   disableBack?: boolean;
+  schema?: FormWizardSchema;
+  modelValue?: WizardData;
+  schemaComponents?: Record<string, any>;
 }>(), {
   id: undefined,
   title: "Awesome Wizard",
@@ -170,8 +186,11 @@ const props = withDefaults(defineProps<{
   disableBack: false,
 });
 
-// Generate ID if not provided
-const wizardId = computed(() => props.id || "fw_" + new Date().valueOf());
+let wizardInstanceCounter = 0;
+const internalWizardId = `fw_${++wizardInstanceCounter}`;
+
+// Generate ID if not provided (stable per instance in a given runtime)
+const wizardId = computed(() => props.id || internalWizardId);
 
 const emit = defineEmits({
   'on-change': (prevIndex: number, nextIndex: number) => true,
@@ -180,6 +199,7 @@ const emit = defineEmits({
   'on-loading': (loading: boolean) => true,
   'on-error': (error: any) => true,
   'on-validate': (result: boolean, index: number) => true,
+  'update:modelValue': (data: WizardData) => true,
 });
 
 // Reactive state
@@ -187,6 +207,120 @@ const activeTabIndex = ref(0);
 const maxStep = ref(0);
 const loading = ref(false);
 const tabs = ref<Tab[]>([]);
+
+// Shared wizard data (used in schema mode and optionally in classic mode)
+const wizardData = ref<WizardData>({
+  ...(props.schema?.initialData || {}),
+  ...(props.modelValue || {}),
+});
+
+const updateWizardData = (partial: Record<string, any>) => {
+  wizardData.value = {
+    ...wizardData.value,
+    ...partial,
+  };
+  emit("update:modelValue", wizardData.value);
+};
+
+// Schema mode helpers
+const useSchemaMode = computed(() => !!props.schema);
+const rawSchemaSteps = computed(() => props.schema?.steps || []);
+
+const visibleSchemaSteps = computed(() => {
+  if (!props.schema) return [];
+
+  return rawSchemaSteps.value.filter((step, index) => {
+    if (!step.condition) return true;
+
+    const ctx = {
+      data: wizardData.value,
+      stepId: step.id,
+      index,
+    };
+
+    const result = step.condition(ctx);
+
+    if (isPromise(result)) {
+      // For v1 keep it simple: async conditions are treated as truthy by default,
+      // and should be expressed via validate instead.
+      return true;
+    }
+
+    return result === true;
+  });
+});
+
+const currentSchemaStep = computed(() => {
+  if (!useSchemaMode.value) return null;
+  return visibleSchemaSteps.value[activeTabIndex.value] || null;
+});
+
+const currentSchemaComponent = computed(() => {
+  const step = currentSchemaStep.value;
+  if (!step || !props.schemaComponents) return null;
+
+  const key = step.component || step.id;
+  return props.schemaComponents[key] || null;
+});
+
+// Store component instance and router references for later use
+let componentInstance: any = getCurrentInstance();
+let routerInstance: any = null;
+
+// Keep wizardData in sync when modelValue is controlled from the parent
+watch(
+  () => props.modelValue,
+  (newVal) => {
+    if (newVal) {
+      wizardData.value = { ...newVal };
+    }
+  }
+);
+
+const resolveRouterInstance = () => {
+  if (!componentInstance) {
+    componentInstance = getCurrentInstance();
+  }
+
+  if (routerInstance || !componentInstance) {
+    return routerInstance;
+  }
+
+  const appContext = componentInstance.appContext;
+
+  // Try multiple ways to access the router
+  if (appContext?.config?.globalProperties?.$router) {
+    routerInstance = appContext.config.globalProperties.$router;
+  } else if (componentInstance.proxy && (componentInstance.proxy as any).$router) {
+    routerInstance = (componentInstance.proxy as any).$router;
+  } else if (appContext?.app && (appContext.app as any).$router) {
+    routerInstance = (appContext.app as any).$router;
+  } else if (componentInstance.provides && (componentInstance.provides as any).$router) {
+    routerInstance = (componentInstance.provides as any).$router;
+  } else if (componentInstance.parent?.provides && (componentInstance.parent.provides as any).$router) {
+    routerInstance = (componentInstance.parent.provides as any).$router;
+  }
+
+  return routerInstance;
+};
+
+const getCurrentRoute = () => {
+  const instance = componentInstance;
+  const router = resolveRouterInstance();
+
+  if (!instance && !router) {
+    return null;
+  }
+
+  const appContext = instance?.appContext;
+
+  const routeFromGlobals = appContext?.config?.globalProperties?.$route;
+  const routeFromProxy = instance?.proxy && (instance.proxy as any).$route;
+  const routeFromApp = appContext?.app && (appContext.app as any).$route;
+  const routeFromRouter = router?.currentRoute?.value;
+
+  return routeFromGlobals || routeFromProxy || routeFromApp || routeFromRouter || null;
+};
 
 // Computed properties
 const tabCount = computed(() => tabs.value.length);
@@ -229,6 +363,10 @@ const slotProps = computed(() => ({
   activeTabIndex: activeTabIndex.value,
   isLastStep: isLastStep.value,
   fillButtonStyle: fillButtonStyle.value,
+  tabs: tabs.value,
+  tabCount: tabCount.value,
+  wizardData: wizardData.value,
+  updateWizardData,
 }));
 
 // Methods
@@ -237,7 +375,7 @@ const emitTabChange = (prevIndex: number, nextIndex: number) => {
   emit("update:startIndex", nextIndex);
 };
 
-const addTab = (item: Tab, updateFn?: (active: boolean) => void) => {
+const addTab = (item: Tab, updateFn?: (active: boolean, tabId?: string) => void) => {
   const index = tabCount.value;
   item.tabId = `${item.title.replace(/ /g, "")}${index}`;
 
@@ -245,10 +383,47 @@ const addTab = (item: Tab, updateFn?: (active: boolean) => void) => {
   const tabWithUpdate = { ...item, updateActiveState: updateFn };
   tabs.value.splice(index, 0, tabWithUpdate);
 
+  // Inform the child about the generated tabId and its initial active state
+  if (updateFn) {
+    updateFn(item.active, item.tabId);
+  }
+
   // if a step is added before the current one, go to it
   if (index < activeTabIndex.value + 1) {
     maxStep.value = index;
     changeTab(activeTabIndex.value + 1, index);
+  }
+};
+
+const rebuildTabsFromSchema = () => {
+  if (!useSchemaMode.value) return;
+
+  tabs.value = visibleSchemaSteps.value.map((step, index) => {
+    const title = step.title || `Step ${index + 1}`;
+
+    const tab: Tab = {
+      tabId: `${step.id || title.replace(/ /g, "")}${index}`,
+      title,
+      active: index === activeTabIndex.value,
+      checked: index <= activeTabIndex.value,
+      validationError: null,
+      beforeChange: undefined,
+      afterChange: undefined,
+      route: step.route,
+      color: props.color,
+      errorColor: props.errorColor,
+      shape: props.shape,
+      icon: step.icon,
+      customIcon: step.customIcon,
+      updateActiveState: undefined,
+    };
+
+    return tab;
+  });
+
+  // Clamp active index if needed
+  if (activeTabIndex.value >= tabs.value.length) {
+    activeTabIndex.value = Math.max(0, tabs.value.length - 1);
   }
 };
 
@@ -310,8 +485,9 @@ const navigateToTab = (index: number): boolean => {
 const nextTab = () => {
   const cb = () => {
     if (activeTabIndex.value < tabCount.value - 1) {
-      changeTab(activeTabIndex.value, activeTabIndex.value + 1);
-      afterTabChange(activeTabIndex.value);
+      const newIndex = activeTabIndex.value + 1;
+      changeTab(activeTabIndex.value, newIndex);
+      afterTabChange(newIndex);
     } else {
       emit("on-complete");
     }
@@ -338,7 +514,8 @@ const focusNextTab = () => {
   if (tabIndex !== -1 && tabIndex < tabs.value.length - 1) {
     const tabToFocus = tabs.value[tabIndex + 1];
     if (tabToFocus.checked) {
-      findElementAndFocus(tabToFocus.tabId);
+      // The DOM id used for the step element is `step-${tab.tabId}`
+      findElementAndFocus(`step-${tabToFocus.tabId}`);
     }
   }
 };
@@ -347,7 +524,8 @@ const focusPrevTab = () => {
   const tabIndex = getFocusedTabIndex(tabs.value);
   if (tabIndex !== -1 && tabIndex > 0) {
     const toFocusId = tabs.value[tabIndex - 1].tabId;
-    findElementAndFocus(toFocusId);
+    // The DOM id used for the step element is `step-${tab.tabId}`
+    findElementAndFocus(`step-${toFocusId}`);
   }
 };
 
@@ -396,6 +574,56 @@ const beforeTabChange = (index: number, callback: () => void) => {
   if (loading.value) {
     return;
   }
+
+  // Schema-mode validation
+  if (useSchemaMode.value && props.schema) {
+    const schemaStep = visibleSchemaSteps.value[index];
+    if (schemaStep && schemaStep.validate) {
+      const ctx = {
+        data: wizardData.value,
+        stepId: schemaStep.id,
+        index,
+      };
+
+      const result = schemaStep.validate(ctx);
+
+      if (isPromise(result)) {
+        setLoading(true);
+        (result as Promise<boolean | string>)
+          .then((res) => {
+            setLoading(false);
+            if (res === true) {
+              executeBeforeChange(true, callback);
+            } else {
+              const message = res === false ? "Validation failed" : res;
+              if (tabs.value[index]) {
+                tabs.value[index].validationError = String(message);
+              }
+              emit("on-error", message);
+              executeBeforeChange(false, () => {});
+            }
+          })
+          .catch((error) => {
+            setLoading(false);
+            setValidationError(error);
+          });
+      } else {
+        if (result === true) {
+          executeBeforeChange(true, callback);
+        } else {
+          const message = result === false ? "Validation failed" : result;
+          if (tabs.value[index]) {
+            tabs.value[index].validationError = String(message);
+          }
+          emit("on-error", message);
+          executeBeforeChange(false, () => {});
+        }
+      }
+      return;
+    }
+  }
+
+  // Classic per-tab beforeChange
   const oldTab = tabs.value[index];
   if (oldTab && oldTab.beforeChange !== undefined) {
     const tabChangeRes = oldTab.beforeChange();
@@ -432,28 +660,88 @@ const changeTab = (oldIndex: number, newIndex: number, emitChangeEvent = true) =
   return true;
 };
 
-const tryChangeRoute = (tab: Tab) => {
-  if (tab.route && typeof tab.route === 'string') {
-    const instance = getCurrentInstance();
-    const router = instance?.appContext.config.globalProperties.$router;
-
-    if (router) {
-      router.push(tab.route);
-    } else {
-      // Fallback: try to use Vue Router from parent component
-      console.warn('Vue Router not found. Make sure to install vue-router and use app.use(router)');
-    }
+const normalizeRouteTarget = (routeTarget: string | object | undefined, router: any) => {
+  if (!routeTarget) {
+    return { raw: null, path: null };
   }
+
+  if (typeof routeTarget === 'string') {
+    return { raw: routeTarget, path: routeTarget };
+  }
+
+  // For route objects, try to resolve to get a stable path/fullPath
+  if (router && typeof router.resolve === 'function') {
+    const resolved = router.resolve(routeTarget as any);
+    const path = resolved?.fullPath || resolved?.path || null;
+    return { raw: routeTarget, path };
+  }
+
+  return { raw: routeTarget, path: null };
 };
 
-const checkRouteChange = (route: string) => {
+const tryChangeRoute = (tab: Tab) => {
+  if (!tab.route) {
+    return;
+  }
+
+  const router = resolveRouterInstance();
+
+  if (!router) {
+    if (import.meta.env && import.meta.env.DEV) {
+      console.warn('Vue Router not found. Make sure to install vue-router and use app.use(router) for route-based navigation.');
+    }
+    return;
+  }
+
+  const current = getCurrentRoute();
+  const currentPath = current?.fullPath || current?.path || undefined;
+
+  const target = normalizeRouteTarget(tab.route as any, router);
+
+  // If we can determine a target path and it matches the current one, avoid redundant navigation
+  if (target.path && currentPath === target.path) {
+    return;
+  }
+
+  router.push(target.raw as any).catch((err: any) => {
+    // Ignore redundant navigation errors; surface others
+    const message = err?.message || '';
+    if (!message.includes('Avoided redundant navigation') && !message.includes('NavigationDuplicated')) {
+      console.warn('Route navigation failed:', err);
+    }
+  });
+};
+
+const checkRouteChange = (route: any) => {
+  const router = resolveRouterInstance();
+  const routePath = route?.fullPath || route?.path || route || '';
+
   let matchingTabIndex = -1;
   const matchingTab = tabs.value.find((tab, index) => {
-    const match = tab.route === route;
-    if (match) {
-      matchingTabIndex = index;
+    if (!tab.route) {
+      return false;
     }
-    return match;
+
+    // String route: compare directly to the current path
+    if (typeof tab.route === 'string') {
+      const match = tab.route === routePath;
+      if (match) {
+        matchingTabIndex = index;
+      }
+      return match;
+    }
+
+    // Object route: resolve both and compare resulting paths
+    if (router && typeof router.resolve === 'function') {
+      const tabLocation = normalizeRouteTarget(tab.route as any, router);
+      const match = !!tabLocation.path && tabLocation.path === routePath;
+      if (match) {
+        matchingTabIndex = index;
+      }
+      return match;
+    }
+
+    return false;
   });
 
   if (matchingTab && !matchingTab.active) {
@@ -538,33 +826,84 @@ watch(() => props.startIndex, (newStartIndex) => {
   }
 });
 
+// Rebuild tabs when schema definition changes
+watch(
+  () => props.schema,
+  () => {
+    if (useSchemaMode.value) {
+      rebuildTabsFromSchema();
+    }
+  },
+  { deep: true }
+);
+
+// Re-run conditions when wizard data changes in schema mode
+watch(
+  () => wizardData.value,
+  () => {
+    if (useSchemaMode.value) {
+      const prevActiveId = tabs.value[activeTabIndex.value]?.tabId;
+      rebuildTabsFromSchema();
+      // Try to keep the same step active if still visible
+      const newIndex = tabs.value.findIndex((t) => t.tabId === prevActiveId);
+      if (newIndex !== -1) {
+        activateTabAndCheckStep(newIndex);
+      }
+    }
+  },
+  { deep: true }
+);
+
 // Route watching with proper Vue Router integration
 const currentRoute = ref('');
 let routeWatcher: any = null;
+let hasLoggedRouterWarning = false;
 
 const setupRouteWatching = () => {
-  const instance = getCurrentInstance();
-  const router = instance?.appContext.config.globalProperties.$router;
-  const route = instance?.appContext.config.globalProperties.$route;
+  const instance = componentInstance;
 
-  if (router && route) {
+  if (!instance) {
+    if (!hasLoggedRouterWarning && import.meta.env && import.meta.env.DEV) {
+      console.warn('Component instance not available for route watching');
+      hasLoggedRouterWarning = true;
+    }
+    return;
+  }
+
+  const router = resolveRouterInstance();
+  const route = getCurrentRoute();
+
+  if (route) {
     // Watch for route changes
     routeWatcher = watch(
-      () => route.path,
+      () => getCurrentRoute()?.path,
       (newPath) => {
-        currentRoute.value = newPath;
-        checkRouteChange(newPath);
+        const fullRoute = getCurrentRoute();
+        const pathToUse = fullRoute?.fullPath || fullRoute?.path || newPath || '';
+
+        if (pathToUse !== currentRoute.value) {
+          currentRoute.value = pathToUse;
+          checkRouteChange(fullRoute || pathToUse);
+        }
       },
       { immediate: true }
     );
-  } else {
+  } else if (!router && !hasLoggedRouterWarning && import.meta.env && import.meta.env.DEV) {
     console.warn('Vue Router not detected. Route-based navigation will not work.');
+    hasLoggedRouterWarning = true;
   }
 };
 
 // Lifecycle
 onMounted(() => {
-  initializeTabs();
+  if (useSchemaMode.value) {
+    rebuildTabsFromSchema();
+    if (tabs.value.length > 0) {
+      activateTabAndCheckStep(activeTabIndex.value);
+    }
+  } else {
+    initializeTabs();
+  }
   setupRouteWatching();
 });
 

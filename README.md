@@ -1,69 +1,79 @@
-<h1 align="center">Vue3 form wizard</h1>
+# Vue3 form wizard
+
+**A dynamic wizard to split your forms easier**
+
+  
 
 
-<p align="center"><b>A dynamic wizard to split your forms easier</b></p>
-<br>
-<p align="center">
-  <a href="http://vue3-form-wizard-document.netlify.com"><img src="https://i.postimg.cc/258CSGbV/vue3-form-wizard-icon.png" alt="Demo" width="160"></a>
-  <p align="center">Vue3-form-wizard is a vue based component with no external depenendcies which simplifies tab wizard management.</p>
-</p>
 
-<p align="center">
-  <a href="https://www.npmjs.com/package/vue3-form-wizard">
-    <img src="https://img.shields.io/npm/v/vue3-form-wizard.svg?style=flat-square" alt="version">
-  </a>
-  <a href="https://github.com/parsajiravand/vue3-form-wizard/blob/master/LICENSE">
-    <img src="https://img.shields.io/npm/l/vue3-form-wizard.svg?style=flat-square" alt="MIT license">
-  </a>
-  <a href="http://npmcharts.com/compare/vue3-form-wizard">
-    <img src="https://img.shields.io/npm/dm/vue3-form-wizard.svg?style=flat-square" alt="downloads">
-  </a>
-  <br>
-  <a href="https://unpkg.com/vue3-form-wizard/dist/">
-    <img src="http://img.badgesize.io/https://unpkg.com/vue3-form-wizard/dist/vue3-form-wizard.umd.js?compression=gzip&label=gzip%20size&style=flat-square" alt="gzip size">
-  </a>
-  <a href="https://github.com/parsajiravand/vue3-form-wizard/blob/master/package.json">
-    <img src="https://img.shields.io/badge/dependencies-none-lightgrey.svg?style=flat-square" alt="no dependencies">
-  </a>
-  <a href="https://travis-ci.org/parsajiravand/vue3-form-wizard">
-    <img src="https://img.shields.io/travis/parsajiravand/vue3-form-wizard.svg?style=flat-square" alt="travis">
-  </a>
-</p>
 
-<p align="center">
-  <br>
-  <strong>
-  <a style="font-size:20px" href="https://vue3-form-wizard-document.netlify.app/usage"> 📚Document</a> ・
-  <a style="font-size:20px" href="https://vue3-form-wizard-document.netlify.app/demos">🔎 Demos</a> ・
-  <a style="font-size:20px" href="https://vue3-form-wizard-document.netlify.app/playground"> 🔬 Playground</a>
-  </strong>
-</p>
+Vue3-form-wizard is a vue based component with no external depenendcies which simplifies tab wizard management.
+
+
+
+  
+
+
+  
+ **[📚Document](https://vue3-form-wizard-document.netlify.app/usage) ・ [🔎 Demos](https://vue3-form-wizard-document.netlify.app/demos) ・ [🔬 Playground**](https://vue3-form-wizard-document.netlify.app/playground)
 
 ## Dependencies
+
 - required: Vuejs >= 3.x
 
 ## Installation
+
 ```bash
 npm install vue3-form-wizard --save
 ```
+
 ```bash
 yarn add vue3-form-wizard
 ```
+
 ## 🚀 Features
 
-- 🎪 [**Interactive docs & demos**](https://vue3-form-wizard-document.netlify.app/demos/)
-- 🦾 **Type Strong**: Written in [Typescript](https://www.typescriptlang.org/), with [TS Docs](https://github.com/microsoft/tsdoc)
-- 🌎 **No bundler required**: Usable via CDN
-- 🔩 **Flexible**: Configurable event filters and targets
+- **Schema mode**: Declarative steps with `schema`, `condition`, `validate`, and `v-model`
+- **Classic mode**: Slot-based steps with `<tab-content>`
+- **Vue Router**: URL sync with `route` prop (optional)
+- **Accessibility**: ARIA roles, keyboard navigation
+- **TypeScript**: Full type support
 
-## 🔧 [**Document**](https://vue3-form-wizard-document.netlify.app/usage/)
+## 🔧 **[Document](https://vue3-form-wizard-document.netlify.app/usage/)**
 
-- ➡️ [**Usagae**](https://vue3-form-wizard-document.netlify.app/usage/)
-- ➡️ [**Props**](https://vue3-form-wizard-document.netlify.app/props/)
-- ➡️ [**Slots**](https://vue3-form-wizard-document.netlify.app/slots/)
-- ➡️ [**Methods**](https://vue3-form-wizard-document.netlify.app/Mmthods/)
-- ➡️ [**Scoped-slots**](https://vue3-form-wizard-document.netlify.app/scoped-slots/)
-- ➡️ [**Demos**](https://vue3-form-wizard-document.netlify.app/demos/)
+- ➡️ **[Usage](https://vue3-form-wizard-document.netlify.app/usage/)**
+- ➡️ **[Props](https://vue3-form-wizard-document.netlify.app/props/)**
+- ➡️ **[Slots](https://vue3-form-wizard-document.netlify.app/slots/)**
+- ➡️ **[Methods](https://vue3-form-wizard-document.netlify.app/methods/)**
+- ➡️ **[Scoped-slots](https://vue3-form-wizard-document.netlify.app/scoped-slots/)**
+- ➡️ **[Demos](https://vue3-form-wizard-document.netlify.app/demos/)**
+
+## Quick start
+
+```vue
+<script setup>
+import { FormWizard, TabContent } from 'vue3-form-wizard'
+import 'vue3-form-wizard/dist/style.css'
+
+const onComplete = () => alert('Done!')
+</script>
+
+<template>
+  <form-wizard @on-complete="onComplete" color="#9b59b6">
+    <tab-content title="Step 1">
+      <p>First step content.</p>
+    </tab-content>
+    <tab-content title="Step 2">
+      <p>Second step content.</p>
+    </tab-content>
+    <tab-content title="Step 3">
+      <p>Final step.</p>
+    </tab-content>
+  </form-wizard>
+</template>
+```
+
+Register globally or use components locally; include the CSS. See [Schema mode](#schema-mode) and [Router Integration](#-router-integration) for more.
 
 ## 🔗 Router Integration
 
@@ -72,11 +82,13 @@ Vue3 Form Wizard now supports automatic route synchronization with Vue Router!
 ### Setup
 
 First, install Vue Router:
+
 ```bash
 npm install vue-router@4.1.6
 ```
 
 Configure your Vue app with Vue Router:
+
 ```javascript
 import { createApp } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
@@ -97,6 +109,7 @@ app.mount('#app')
 ### Usage
 
 Add `route` prop to your `tab-content` components:
+
 ```vue
 <template>
   <form-wizard @on-complete="onComplete" color="#9b59b6">
@@ -123,50 +136,147 @@ Add `route` prop to your `tab-content` components:
 ### Route Types
 
 The `route` prop accepts:
+
 - **String**: `route="/step1"` - Direct path
 - **Object**: `route="{ name: 'step1', params: { id: 1 } }"` - Named routes with params
 
-### Testing Router Functionality
+## Schema Mode
 
-A router test script is included to verify your setup:
+Define wizard steps declaratively with conditions and validation:
 
-```bash
-# Run the router test
-node test-router.js
+```vue
+
+<template>
+  <FormWizard
+    title="Schema: Basic"
+    :schema="schema"
+    :schema-components="schemaComponents"
+    v-model="schemaData"
+    @on-complete="onComplete"
+  />
+</template>
+
+<script setup>
+import { ref } from "vue";
+import { FormWizard } from "vue3-form-wizard";
+import "vue3-form-wizard/dist/style.css";
+import SimpleStep from "./schema-steps/SimpleStep.vue";
+import DoneStep from "./schema-steps/DoneStep.vue";
+
+const schema = {
+  initialData: { plan: "basic" },
+  steps: [
+    { id: "intro", title: "Intro", component: "SimpleStep" },
+    { id: "review", title: "Review", component: "DoneStep" },
+  ],
+};
+
+const schemaComponents = { SimpleStep, DoneStep };
+const schemaData = ref();
+const onComplete = () => alert("Done!");
+</script>
+
 ```
 
-The test will check:
-- ✅ Vue Router installation
-- ✅ Router configuration
-- ✅ Route definitions
-- ✅ Component integration
+## Schema mode with DefineComponent
 
-### Demo
+```vue
+<template>
+  <FormWizard
+    title="Schema: defineComponent"
+    :schema="schema"
+    :schema-components="schemaComponents"
+    v-model="schemaData"
+    color="#8e44ad"
+    @on-complete="onComplete"
+  />
+</template>
 
-The project includes a complete demo with router integration. Run:
+<script setup>
+import { ref, defineComponent, h } from "vue";
+import { FormWizard } from "vue3-form-wizard";
+import "vue3-form-wizard/dist/style.css";
+
+// Step components using defineComponent with setup returning render function
+const NameStep = defineComponent({
+  name: "NameStep",
+  props: {
+    data: { type: Object, required: true },
+    updateData: { type: Function, required: true },
+  },
+  setup(props) {
+    return () =>
+      h("div", [
+        h("h2", "Your name"),
+        h("input", {
+          type: "text",
+          value: props.data.name,
+          placeholder: "Name",
+          onInput: (e) => props.updateData({ name: e.target.value }),
+          style: "padding:8px;width:100%;max-width:240px;margin-bottom:8px;",
+        }),
+      ]);
+  },
+});
+
+const SummaryStep = defineComponent({
+  name: "SummaryStep",
+  props: {
+    data: { type: Object, required: true },
+    updateData: { type: Function, required: true },
+  },
+  setup(props) {
+    return () =>
+      h("div", [
+        h("h2", "Summary"),
+        h("p", ["Hello, ", h("strong", props.data.name || "Guest"), "!"]),
+      ]);
+  },
+});
+
+const schema = {
+  initialData: { name: "" },
+  steps: [
+    { id: "name", title: "Name", component: "NameStep" },
+    { id: "summary", title: "Summary", component: "SummaryStep" },
+  ],
+};
+
+const schemaComponents = { NameStep, SummaryStep };
+const schemaData = ref({ name: "" });
+const onComplete = () => alert("Done!");
+</script>
+
+```
+
+Step components receive `data` and `update-data` props. Use `condition` to hide steps dynamically and `validate` to block navigation.
+
+## Local Samples & Tests
+
+Run the dev server for 15 samples:
 
 ```bash
 npm run dev
 ```
 
-Then visit `http://localhost:5173` to see:
-- RouterTest component showing current route
-- Navigation buttons for testing
-- Route history tracking
-- Automatic URL updates when switching tabs
+Visit `http://localhost:5173` and use the dropdown to switch between samples: basic wizard, icons, layouts, shapes, validation, schema mode, and more.
+
+Run tests:
+
+```bash
+npm run test
+```
+
+## Scripts
 
 
-
-## Until the version is completely stable
-- [x] Updated To Vue3 ✅
-- [x] Setup with Vite ✅
-- [x] Add declaration type(Typescript Support)✅
-- [ ] Fix All Issue on vue-form-wizard 🚧
-- [x] Rewrite With Setup Function and ts ✅
-- [ ] Setup New Features🚧
-- [x] Setup New Documentation ✅
-
-### This is a cloned package from  [vue-form-wizard](https://github.com/BinarCode/vue-form-wizard).Updated to vue 3 with new features and bug fixes
+| Command         | Description                   |
+| --------------- | ----------------------------- |
+| `npm run dev`   | Start dev server with samples |
+| `npm run build` | Build library and types       |
+| `npm run test`  | Run Vitest test suite         |
 
 
-#### [Old Documentation](https://binarcode.github.io/vue-form-wizard/#/)
+## Credits
+
+Cloned from [vue-form-wizard](https://github.com/BinarCode/vue-form-wizard), updated to Vue 3 with new features and bug fixes.
