@@ -254,30 +254,12 @@ Step components receive `data` and `update-data` props. Use `condition` to hide 
 ## RTL support
 
 You can enable RTL for the wizard content without flipping the steps:
+If you also want the horizontal steps, progress bar, and footer buttons to run from right to left, use `reverse-horizontal` and `rtl` together.
 
-```vue
-<template>
-  <form-wizard :rtl="true">
-    <tab-content title="عنوان">
-      <p>هذا نص باللغة العربية.</p>
-    </tab-content>
-  </form-wizard>
-</template>
-```
+Sample Demo:
+[RTL support](https://vue3-form-wizard-document.netlify.app/demos/#rtl-support)
 
-Or via pure CSS, keeping the steps and progress bar LTR while making the content RTL:
 
-```css
-[dir="rtl"] .vue-form-wizard {
-  direction: ltr;
-}
-
-[dir="rtl"] .vue-form-wizard .wizard-tab-content,
-[dir="rtl"] .vue-form-wizard .wizard-tab-container {
-  direction: rtl;
-  text-align: right;
-}
-```
 
 ## Local Samples & Tests
 
