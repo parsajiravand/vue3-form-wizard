@@ -2,7 +2,14 @@
   <div
     :id="wizardId"
     class="vue-form-wizard"
-    :class="[stepSize, { vertical: isVertical, 'fw-rtl-content': rtl }]"
+    :class="[
+      stepSize,
+      {
+        vertical: isVertical,
+        'fw-rtl-content': rtl,
+        'fw-horizontal-reverse': reverseHorizontal,
+      },
+    ]"
     @keyup.right="focusNextTab"
     @keyup.left="focusPrevTab"
   >
@@ -19,7 +26,7 @@
       <ul
         class="wizard-nav wizard-nav-pills"
         role="tablist"
-        :class="stepsClasses"
+        :class="[stepsClasses, { 'fw-steps-reverse': reverseHorizontal }]"
       >
         <slot
           name="step"
@@ -166,6 +173,8 @@ const props = withDefaults(defineProps<{
   modelValue?: WizardData;
   schemaComponents?: Record<string, any>;
   rtl?: boolean;
+  // Reverse horizontal layout: steps and footer buttons
+  reverseHorizontal?: boolean;
 }>(), {
   id: undefined,
   title: "Awesome Wizard",
@@ -186,6 +195,7 @@ const props = withDefaults(defineProps<{
   disableBackOnClickStep: false,
   disableBack: false,
   rtl: false,
+  reverseHorizontal: false,
 });
 
 let wizardInstanceCounter = 0;
@@ -330,6 +340,10 @@ const tabCount = computed(() => tabs.value.length);
 const isLastStep = computed(() => activeTabIndex.value === tabCount.value - 1);
 
 const isVertical = computed(() => props.layout === "vertical");
+
+const reverseHorizontal = computed(
+  () => !isVertical.value && !!props.reverseHorizontal
+);
 
 const displayPrevButton = computed(() => activeTabIndex.value !== 0);
 

@@ -48,6 +48,8 @@ export interface FormWizardProps {
   schemaComponents?: Record<string, any>;
   // Optional RTL mode for content (steps remain LTR)
   rtl?: boolean;
+  // Reverse horizontal layout (steps + footer buttons)
+  reverseHorizontal?: boolean;
 }
 
 export interface FormWizardEmits {

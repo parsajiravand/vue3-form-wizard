@@ -118,6 +118,7 @@ const handleComplete = (sampleId: string) => {
       <div v-show="currentSample === '1'" class="sample">
         <form-wizard title="تست راست چین"
         rtl
+        reverseHorizontal
          back-button-text="قبلی"
          next-button-text="بعدی"
          finish-button-text="تکمیل"
