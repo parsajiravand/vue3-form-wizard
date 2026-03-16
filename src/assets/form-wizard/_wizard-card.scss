@@ -147,4 +147,15 @@
 
     }
   }
+
+  &.fw-rtl-content {
+    // Keep header/steps/progress bar in logical LTR
+    direction: ltr;
+
+    .wizard-tab-content,
+    .wizard-tab-container {
+      direction: rtl;
+      text-align: right;
+    }
+  }
 }

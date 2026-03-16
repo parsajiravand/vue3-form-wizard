@@ -2,7 +2,7 @@
   <div
     :id="wizardId"
     class="vue-form-wizard"
-    :class="[stepSize, { vertical: isVertical }]"
+    :class="[stepSize, { vertical: isVertical, 'fw-rtl-content': rtl }]"
     @keyup.right="focusNextTab"
     @keyup.left="focusPrevTab"
   >
@@ -165,6 +165,7 @@ const props = withDefaults(defineProps<{
   schema?: FormWizardSchema;
   modelValue?: WizardData;
   schemaComponents?: Record<string, any>;
+  rtl?: boolean;
 }>(), {
   id: undefined,
   title: "Awesome Wizard",
@@ -184,6 +185,7 @@ const props = withDefaults(defineProps<{
   startIndex: 0,
   disableBackOnClickStep: false,
   disableBack: false,
+  rtl: false,
 });
 
 let wizardInstanceCounter = 0;

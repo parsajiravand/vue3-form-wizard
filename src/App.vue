@@ -116,10 +116,15 @@ const handleComplete = (sampleId: string) => {
     <main class="main">
       <!-- 1. Basic -->
       <div v-show="currentSample === '1'" class="sample">
-        <form-wizard title="Basic Wizard" color="#3498db" @on-complete="handleComplete('1')">
-          <tab-content title="Step 1"><div><h2>Step 1</h2><p>First step content.</p></div></tab-content>
-          <tab-content title="Step 2"><div><h2>Step 2</h2><p>Second step content.</p></div></tab-content>
-          <tab-content title="Step 3"><div><h2>Step 3</h2><p>Third step content.</p></div></tab-content>
+        <form-wizard title="تست راست چین"
+        rtl
+         back-button-text="قبلی"
+         next-button-text="بعدی"
+         finish-button-text="تکمیل"
+        @on-complete="handleComplete('1')">
+          <tab-content title="مرحله ۱"><div><h2>تست راست چین مرحله ۱</h2><p> محتوای مرحله ۱ </p></div></tab-content>
+          <tab-content title="مرحله ۲"><div><h2>تست راست چین مرحله ۲</h2><p> محتوای مرحله ۲ </p></div></tab-content>
+          <tab-content title="مرحله ۳"><div><h2>تست راست چین مرحله ۳</h2><p> محتوای مرحله ۳ </p></div></tab-content>
         </form-wizard>
       </div>
 

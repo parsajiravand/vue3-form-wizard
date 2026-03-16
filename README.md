@@ -251,6 +251,34 @@ const onComplete = () => alert("Done!");
 
 Step components receive `data` and `update-data` props. Use `condition` to hide steps dynamically and `validate` to block navigation.
 
+## RTL support
+
+You can enable RTL for the wizard content without flipping the steps:
+
+```vue
+<template>
+  <form-wizard :rtl="true">
+    <tab-content title="عنوان">
+      <p>هذا نص باللغة العربية.</p>
+    </tab-content>
+  </form-wizard>
+</template>
+```
+
+Or via pure CSS, keeping the steps and progress bar LTR while making the content RTL:
+
+```css
+[dir="rtl"] .vue-form-wizard {
+  direction: ltr;
+}
+
+[dir="rtl"] .vue-form-wizard .wizard-tab-content,
+[dir="rtl"] .vue-form-wizard .wizard-tab-container {
+  direction: rtl;
+  text-align: right;
+}
+```
+
 ## Local Samples & Tests
 
 Run the dev server for 15 samples:
