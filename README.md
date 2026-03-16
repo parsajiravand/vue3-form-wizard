@@ -251,6 +251,16 @@ const onComplete = () => alert("Done!");
 
 Step components receive `data` and `update-data` props. Use `condition` to hide steps dynamically and `validate` to block navigation.
 
+## RTL support
+
+You can enable RTL for the wizard content without flipping the steps:
+If you also want the horizontal steps, progress bar, and footer buttons to run from right to left, use `reverse-horizontal` and `rtl` together.
+
+Sample Demo:
+[RTL support](https://vue3-form-wizard-document.netlify.app/demos/#rtl-support)
+
+
+
 ## Local Samples & Tests
 
 Run the dev server for 15 samples:

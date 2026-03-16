@@ -23,6 +23,7 @@ const samples = [
   { id: "13", label: "13. Disable back button" },
   { id: "14", label: "14. Schema mode – conditional steps" },
   { id: "15", label: "15. Schema mode – async validation" },
+  { id: "16", label: "16. RTL content + reversed steps" },
 ];
 
 // Schema mode step components (render functions – no template compiler)
@@ -288,6 +289,39 @@ const handleComplete = (sampleId: string) => {
           color="#2c3e50"
           @on-complete="handleComplete('15')"
         />
+      </div>
+
+      <!-- 16. RTL content + reversed steps -->
+      <div v-show="currentSample === '16'" class="sample">
+        <form-wizard
+          title="تست راست چین"
+          rtl
+          reverse-horizontal
+          back-button-text="قبلی"
+          next-button-text="بعدی"
+          finish-button-text="تکمیل"
+          color="#3498db"
+          @on-complete="handleComplete('16')"
+        >
+          <tab-content title="مرحله ۱">
+            <div>
+              <h2>تست راست چین مرحله ۱</h2>
+              <p> محتوای مرحله ۱ </p>
+            </div>
+          </tab-content>
+          <tab-content title="مرحله ۲">
+            <div>
+              <h2>تست راست چین مرحله ۲</h2>
+              <p> محتوای مرحله ۲ </p>
+            </div>
+          </tab-content>
+          <tab-content title="مرحله ۳">
+            <div>
+              <h2>تست راست چین مرحله ۳</h2>
+              <p> محتوای مرحله ۳ </p>
+            </div>
+          </tab-content>
+        </form-wizard>
       </div>
     </main>
   </div>

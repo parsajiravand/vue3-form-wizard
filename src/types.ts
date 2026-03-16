@@ -46,6 +46,10 @@ export interface FormWizardProps {
   modelValue?: WizardData;
   // Map of schema step ids/component keys to Vue components
   schemaComponents?: Record<string, any>;
+  // Optional RTL mode for content (steps remain LTR)
+  rtl?: boolean;
+  // Reverse horizontal layout (steps + footer buttons)
+  reverseHorizontal?: boolean;
 }
 
 export interface FormWizardEmits {

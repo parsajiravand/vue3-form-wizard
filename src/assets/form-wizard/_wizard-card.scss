@@ -106,11 +106,16 @@
   }
   .wizard-card-footer {
     padding: 0 20px;
-    .wizard-footer-left {
-      float: left;
-    }
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+
+    .wizard-footer-left,
     .wizard-footer-right {
-      float: right;
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
   }
   @media screen and (max-width: 350px) {
@@ -134,6 +139,14 @@
   &.vertical {
     .wizard-card-footer {
       display: block;
+      padding-top: 30px;
+      gap: 0;
+
+      .wizard-footer-left,
+      .wizard-footer-right {
+        display: block;
+        margin-bottom: 8px;
+      }
     }
     .wizard-nav-pills {
       flex-direction: column;
@@ -142,9 +155,47 @@
       display: flex;
       flex-direction: row;
     }
-    .wizard-card-footer {
-      padding-top: 30px;
+  }
 
+  &.fw-rtl-content {
+    // Keep header/steps/progress bar in logical LTR
+    direction: ltr;
+
+    .wizard-tab-content,
+    .wizard-tab-container {
+      direction: rtl;
+      text-align: right;
+    }
+  }
+
+  &.fw-horizontal-reverse {
+    .wizard-navigation {
+      .wizard-progress-with-circle {
+        direction: rtl;
+
+        .wizard-progress-bar {
+          float: right;
+        }
+      }
+
+      .wizard-nav-pills {
+        flex-direction: row-reverse;
+      }
+    }
+
+    .wizard-card-footer {
+      flex-direction: row-reverse;
+
+      .wizard-footer-left,
+      .wizard-footer-right {
+        flex-direction: row-reverse;
+      }
+    }
+
+    // Disable clearfix hack on flex footer so buttons can align correctly
+    .wizard-card-footer.clearfix::after {
+      content: none;
+      display: none;
     }
   }
 }
