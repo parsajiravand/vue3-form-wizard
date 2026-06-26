@@ -1,97 +1,104 @@
 <template>
-  <div v-show="active" v-if="!lazy || active" class="wizard-tab-container"
-       role="tabpanel"
-       :id="tabId"
-       :aria-hidden="!active"
-       :aria-labelledby="`step-${tabId}`">
-    <slot :active="active">
-    </slot>
-          <slot name="customIcon"></slot>
+  <div
+    v-show="active"
+    v-if="!lazy || active"
+    class="wizard-tab-container"
+    role="tabpanel"
+    :id="tabId"
+    :aria-hidden="!active"
+    :aria-labelledby="`step-${tabId}`"
+  >
+    <slot :active="active"> </slot>
+    <slot name="customIcon"></slot>
   </div>
 </template>
-<script>
-  export default{
-    name: 'tab-content',
-    props: {
-      title: {
-        type: String,
-        default: ''
-      },
-      /***
-       * Icon name for the upper circle corresponding to the tab
-       */
-      icon: {
-        type: String,
-        default: ''
-      },
-      /***
-       * Icon name for the upper circle corresponding to the tab
-       */
-      customIcon: {
-        type: String,
-        default: ''
-      },
-      /***
-       * Only render the content when the tab is active
-       */
-      lazy: {
-        type: Boolean,
-        default: false
-      },
-      /***
-       * Function to execute before tab switch. Return value must be boolean
-       * If the return result is false, tab switch is restricted
-       */
-      beforeChange: {
-        type: Function
-      },
-       /***
-       * Function to execute after tab switch. Return void for now.
-       * Safe to assume necessary validation has already occured
-       */
-      afterChange: {
-        type: Function
-      },
-      route: {
-        type: [String, Object]
-      },
-      additionalInfo: {
-        type: Object,
-        default: () => {}
-      }
-    },
-    inject: ['addTab', 'removeTab'],
-    data () {
-      return {
-        active: false,
-        validationError: null,
-        checked: false,
-        tabId: ''
-      }
-    },
-    computed: {
-      shape () {
-        return this.$parent.shape
-      },
-      color () {
-        return this.$parent.color
-      },
-      errorColor () {
-        return this.$parent.errorColor
-      },
-    },
-    mounted () {
-      this.addTab(this)
-  },
-    unmounted () {
-      this.removeTab(this)
-    },
-    destroyed () {
-      if (this.$el && this.$el.parentNode) {
-        this.$el.parentNode.removeChild(this.$el)
-      }
+<script setup lang="ts">
+import { ref, computed, inject, onMounted, onBeforeUnmount, getCurrentInstance, watch } from 'vue'
 
-      this.removeTab(this)
-    }
+const props = withDefaults(
+  defineProps<{
+    title?: string
+    icon?: string
+    customIcon?: string
+    lazy?: boolean
+    beforeChange?: () => boolean | Promise<boolean>
+    afterChange?: () => void
+    route?: string | object
+    additionalInfo?: Record<string, any>
+  }>(),
+  {
+    title: '',
+    icon: '',
+    customIcon: '',
+    lazy: false,
+    additionalInfo: () => ({}),
+  },
+)
+
+// Injected functions from parent FormWizard
+const addTab = inject<(tab: any, updateFn: (active: boolean) => void) => void>('addTab')
+const removeTab = inject<(tab: any) => void>('removeTab')
+
+// Reactive data (driven by FormWizard via updateActiveState)
+const active = ref(false)
+const tabId = ref('')
+
+// Get current instance for accessing parent
+const instance = getCurrentInstance()
+
+// Computed properties for accessing parent properties
+const shape = computed(() => {
+  const parent = instance?.parent
+  return parent?.props?.shape || 'circle'
+})
+
+const color = computed(() => {
+  const parent = instance?.parent
+  return parent?.props?.color || '#e74c3c'
+})
+
+const errorColor = computed(() => {
+  const parent = instance?.parent
+  return parent?.props?.errorColor || '#8b0000'
+})
+
+// Create tab object to pass to parent (FormWizard manages active/checked/validationError)
+const tabObject = computed(() => ({
+  title: props.title,
+  icon: props.icon,
+  customIcon: props.customIcon,
+  beforeChange: props.beforeChange,
+  afterChange: props.afterChange,
+  route: props.route,
+  active: false,
+  checked: false,
+  validationError: null as string | null,
+  tabId: tabId.value,
+  color: color.value,
+  errorColor: errorColor.value,
+  shape: shape.value,
+}))
+
+// Function to update active state (and initial tabId) from FormWizard
+const updateActiveState = (newActive: boolean, newTabId?: string) => {
+  active.value = newActive
+
+  if (newTabId && !tabId.value) {
+    tabId.value = newTabId
   }
+}
+
+// Lifecycle hooks
+onMounted(() => {
+  if (addTab) {
+    addTab(tabObject.value, updateActiveState)
+  }
+})
+
+onBeforeUnmount(() => {
+  if (removeTab) {
+    removeTab(tabObject.value)
+  }
+})
 </script>
+

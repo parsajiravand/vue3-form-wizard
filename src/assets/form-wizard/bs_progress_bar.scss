@@ -1,5 +1,5 @@
-@import "bs_variables";
-@import "mixins";
+@use "bs_variables" as *;
+@use "mixins" as *;
 @mixin transition($transition...) {
   -webkit-transition: $transition;
   -o-transition: $transition;

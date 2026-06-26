@@ -1,5 +1,5 @@
-@import "bs_variables";
-@import "mixins";
+@use "bs_variables" as *;
+@use "mixins" as *;
 
 .vue-form-wizard .wizard-btn {
   display: inline-block;
