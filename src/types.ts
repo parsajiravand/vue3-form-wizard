@@ -40,6 +40,7 @@ export interface FormWizardProps {
   startIndex?: number;
   disableBackOnClickStep?: boolean;
   disableBack?: boolean;
+  skipValidationOnNext?: boolean;
   // Schema-based mode
   schema?: FormWizardSchema;
   // v-model binding for schema data

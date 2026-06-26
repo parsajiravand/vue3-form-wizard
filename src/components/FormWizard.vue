@@ -134,6 +134,7 @@ const props = withDefaults(
     startIndex?: number
     disableBackOnClickStep?: boolean
     disableBack?: boolean
+    skipValidationOnNext?: boolean
     schema?: FormWizardSchema
     modelValue?: WizardData
     schemaComponents?: Record<string, any>
@@ -160,6 +161,7 @@ const props = withDefaults(
     startIndex: 0,
     disableBackOnClickStep: false,
     disableBack: false,
+    skipValidationOnNext: false,
     rtl: false,
     reverseHorizontal: false,
   },
@@ -440,21 +442,28 @@ const activateAll = () => {
   })
 }
 
+const hasBlockingValidationErrors = () => tabs.value.some((tab) => !!tab.validationError)
+
 const navigateToTab = (index: number): boolean => {
   const validate = index > activeTabIndex.value
+  const allowContinueOnValidationError = validate && props.skipValidationOnNext
   if (index <= maxStep.value) {
     const cb = () => {
       if (validate && index - activeTabIndex.value > 1) {
         // validate all steps recursively until destination index
         changeTab(activeTabIndex.value, activeTabIndex.value + 1)
-        beforeTabChange(activeTabIndex.value, cb)
+        beforeTabChange(activeTabIndex.value, cb, {
+          continueOnValidationError: allowContinueOnValidationError,
+        })
       } else {
         changeTab(activeTabIndex.value, index)
         afterTabChange(activeTabIndex.value)
       }
     }
     if (validate) {
-      beforeTabChange(activeTabIndex.value, cb)
+      beforeTabChange(activeTabIndex.value, cb, {
+        continueOnValidationError: allowContinueOnValidationError,
+      })
     } else {
       setValidationError(null)
       cb()
@@ -464,16 +473,24 @@ const navigateToTab = (index: number): boolean => {
 }
 
 const nextTab = () => {
+  const movingToNextStep = activeTabIndex.value < tabCount.value - 1
+  const allowContinueOnValidationError = movingToNextStep && props.skipValidationOnNext
   const cb = () => {
     if (activeTabIndex.value < tabCount.value - 1) {
       const newIndex = activeTabIndex.value + 1
       changeTab(activeTabIndex.value, newIndex)
       afterTabChange(newIndex)
     } else {
+      if (hasBlockingValidationErrors()) {
+        emit('on-error', 'Cannot complete wizard while validation errors exist')
+        return
+      }
       emit('on-complete')
     }
   }
-  beforeTabChange(activeTabIndex.value, cb)
+  beforeTabChange(activeTabIndex.value, cb, {
+    continueOnValidationError: allowContinueOnValidationError,
+  })
 }
 
 const prevTab = () => {
@@ -516,11 +533,13 @@ const setLoading = (value: boolean) => {
 }
 
 const setValidationError = (error: any) => {
-  tabs.value[activeTabIndex.value].validationError = error
+  if (tabs.value[activeTabIndex.value]) {
+    tabs.value[activeTabIndex.value].validationError = error
+  }
   emit('on-error', error)
 }
 
-const validateBeforeChange = (promiseFn: any, callback: () => void) => {
+const validateBeforeChange = (promiseFn: any, callback: () => void, options: { index: number; continueOnValidationError?: boolean }) => {
   setValidationError(null)
   // we have a promise
   if (isPromise(promiseFn)) {
@@ -529,29 +548,50 @@ const validateBeforeChange = (promiseFn: any, callback: () => void) => {
       .then((res: any) => {
         setLoading(false)
         const validationResult = res === true
-        executeBeforeChange(validationResult, callback)
+        executeBeforeChange(validationResult, callback, options)
       })
       .catch((error: any) => {
         setLoading(false)
-        setValidationError(error)
+        executeBeforeChange(false, callback, {
+          ...options,
+          errorMessage: error,
+        })
       })
     // we have a simple function
   } else {
     const validationResult = promiseFn === true
-    executeBeforeChange(validationResult, callback)
+    executeBeforeChange(validationResult, callback, options)
   }
 }
 
-const executeBeforeChange = (validationResult: boolean, callback: () => void) => {
-  emit('on-validate', validationResult, activeTabIndex.value)
+const executeBeforeChange = (
+  validationResult: boolean,
+  callback: () => void,
+  options: {
+    index: number
+    continueOnValidationError?: boolean
+    errorMessage?: string
+  },
+) => {
+  emit('on-validate', validationResult, options.index)
   if (validationResult) {
+    if (tabs.value[options.index]) {
+      tabs.value[options.index].validationError = null
+    }
     callback()
   } else {
-    tabs.value[activeTabIndex.value].validationError = 'error'
+    const message = options.errorMessage ?? 'error'
+    if (tabs.value[options.index]) {
+      tabs.value[options.index].validationError = String(message)
+    }
+    emit('on-error', message)
+    if (options.continueOnValidationError) {
+      callback()
+    }
   }
 }
 
-const beforeTabChange = (index: number, callback: () => void) => {
+const beforeTabChange = (index: number, callback: () => void, options: { continueOnValidationError?: boolean } = {}) => {
   if (loading.value) {
     return
   }
@@ -574,30 +614,34 @@ const beforeTabChange = (index: number, callback: () => void) => {
           .then((res) => {
             setLoading(false)
             if (res === true) {
-              executeBeforeChange(true, callback)
+              executeBeforeChange(true, callback, { index })
             } else {
               const message = res === false ? 'Validation failed' : res
-              if (tabs.value[index]) {
-                tabs.value[index].validationError = String(message)
-              }
-              emit('on-error', message)
-              executeBeforeChange(false, () => {})
+              executeBeforeChange(false, callback, {
+                index,
+                errorMessage: String(message),
+                continueOnValidationError: options.continueOnValidationError,
+              })
             }
           })
           .catch((error) => {
             setLoading(false)
-            setValidationError(error)
+            executeBeforeChange(false, callback, {
+              index,
+              errorMessage: String(error),
+              continueOnValidationError: options.continueOnValidationError,
+            })
           })
       } else {
         if (result === true) {
-          executeBeforeChange(true, callback)
+          executeBeforeChange(true, callback, { index })
         } else {
           const message = result === false ? 'Validation failed' : result
-          if (tabs.value[index]) {
-            tabs.value[index].validationError = String(message)
-          }
-          emit('on-error', message)
-          executeBeforeChange(false, () => {})
+          executeBeforeChange(false, callback, {
+            index,
+            errorMessage: String(message),
+            continueOnValidationError: options.continueOnValidationError,
+          })
         }
       }
       return
@@ -608,7 +652,10 @@ const beforeTabChange = (index: number, callback: () => void) => {
   const oldTab = tabs.value[index]
   if (oldTab && oldTab.beforeChange !== undefined) {
     const tabChangeRes = oldTab.beforeChange()
-    validateBeforeChange(tabChangeRes, callback)
+    validateBeforeChange(tabChangeRes, callback, {
+      index,
+      continueOnValidationError: options.continueOnValidationError,
+    })
   } else {
     callback()
   }
