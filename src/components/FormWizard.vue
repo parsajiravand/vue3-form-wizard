@@ -26,18 +26,18 @@
       <ul class="wizard-nav wizard-nav-pills" role="tablist" :class="[stepsClasses, { 'fw-steps-reverse': reverseHorizontal }]">
         <slot
           name="step"
-          v-for="(tab, index) in tabs"
-          :tab="tab"
+          v-for="(item, index) in visibleTabs"
+          :tab="item.tab"
           :index="index"
           :navigate-to-tab="navigateToTab"
           :step-size="stepSize"
           :transition="transition"
         >
           <wizard-step
-            :tab="tab"
+            :tab="item.tab"
             :step-size="stepSize"
-            @click="disableBackOnClickStep || disableBack ? false : navigateToTab(index)"
-            @keyup.enter="navigateToTab(index)"
+            @click="disableBackOnClickStep || disableBack ? false : navigateToTab(item.actualIndex)"
+            @keyup.enter="navigateToTab(item.actualIndex)"
             :transition="transition"
             :index="index"
             :disable-back-on-click-step="disableBack ? true : disableBackOnClickStep"
@@ -71,14 +71,14 @@
 
         <div class="wizard-footer-right">
           <slot name="custom-buttons-right" v-bind="slotProps"></slot>
-          <span @click="nextTab" @keyup.enter="nextTab" v-if="isLastStep" role="button" tabindex="0">
+          <span @click="nextTab" @keyup.enter="nextTab" v-if="isLastStep && !hideFinishButton" role="button" tabindex="0">
             <slot name="finish" v-bind="slotProps">
               <wizard-button :style="fillButtonStyle">
                 {{ finishButtonText }}
               </wizard-button>
             </slot>
           </span>
-          <span @click="nextTab" @keyup.enter="nextTab" role="button" tabindex="0" v-else>
+          <span @click="nextTab" @keyup.enter="nextTab" role="button" tabindex="0" v-else-if="!isLastStep">
             <slot name="next" v-bind="slotProps">
               <wizard-button :style="fillButtonStyle" :disabled="loading">
                 {{ nextButtonText }}
@@ -95,7 +95,7 @@ import { ref, computed, watch, onMounted, onBeforeUnmount, provide, getCurrentIn
 import type { FormWizardSchema, WizardData } from '../types'
 import { default as WizardButton } from './WizardButton.vue'
 import { default as WizardStep } from './WizardStep.vue'
-import { isPromise, findElementAndFocus, getFocusedTabIndex } from './helpers.js'
+import { isPromise, findElementAndFocus, getFocusedElementId } from './helpers.js'
 
 interface Tab {
   tabId: string
@@ -111,6 +111,7 @@ interface Tab {
   shape: string
   icon?: string
   customIcon?: string
+  hidden?: boolean
   updateActiveState?: (active: boolean, tabId?: string) => void
 }
 
@@ -141,6 +142,7 @@ const props = withDefaults(
     rtl?: boolean
     // Reverse horizontal layout: steps and footer buttons
     reverseHorizontal?: boolean
+    hideFinishButton?: boolean
   }>(),
   {
     id: undefined,
@@ -150,6 +152,7 @@ const props = withDefaults(
     backButtonText: 'Back',
     finishButtonText: 'Finish',
     hideButtons: false,
+    hideFinishButton: false,
     validateOnBack: false,
     color: '#e74c3c',
     errorColor: '#8b0000',
@@ -304,24 +307,34 @@ const getCurrentRoute = () => {
 }
 
 // Computed properties
-const tabCount = computed(() => tabs.value.length)
+const visibleTabs = computed(() =>
+  tabs.value
+    .map((tab, actualIndex) => ({ tab, actualIndex }))
+    .filter((item) => !item.tab.hidden),
+)
 
-const isLastStep = computed(() => activeTabIndex.value === tabCount.value - 1)
+const visibleTabCount = computed(() => visibleTabs.value.length)
+
+const tabCount = computed(() => visibleTabs.value.length)
+
+const visibleActiveIndex = computed(() => visibleTabs.value.findIndex((item) => item.actualIndex === activeTabIndex.value))
+
+const isLastStep = computed(() => visibleActiveIndex.value === visibleTabCount.value - 1)
 
 const isVertical = computed(() => props.layout === 'vertical')
 
 const reverseHorizontal = computed(() => !isVertical.value && !!props.reverseHorizontal)
 
-const displayPrevButton = computed(() => activeTabIndex.value !== 0)
+const displayPrevButton = computed(() => visibleActiveIndex.value > 0)
 
-const stepPercentage = computed(() => (1 / (tabCount.value * 2)) * 100)
+const stepPercentage = computed(() => (1 / (visibleTabCount.value * 2)) * 100)
 
 const progress = computed(() => {
   let percentage = 0
-  if (activeTabIndex.value > 0) {
+  if (visibleActiveIndex.value > 0) {
     const stepsToAdd = 1
     const stepMultiplier = 2
-    percentage = stepPercentage.value * (activeTabIndex.value * stepMultiplier + stepsToAdd)
+    percentage = stepPercentage.value * (visibleActiveIndex.value * stepMultiplier + stepsToAdd)
   } else {
     percentage = stepPercentage.value
   }
@@ -352,6 +365,37 @@ const slotProps = computed(() => ({
   updateWizardData,
 }))
 
+// Tab visibility helpers
+const findNextVisibleTabIndex = (fromIndex: number): number => {
+  for (let i = fromIndex + 1; i < tabs.value.length; i++) {
+    if (!tabs.value[i]?.hidden) {
+      return i
+    }
+  }
+  return -1
+}
+
+const findPrevVisibleTabIndex = (fromIndex: number): number => {
+  for (let i = fromIndex - 1; i >= 0; i--) {
+    if (!tabs.value[i]?.hidden) {
+      return i
+    }
+  }
+  return -1
+}
+
+const getNearestVisibleTabIndex = (index: number): number => {
+  const next = findNextVisibleTabIndex(index)
+  if (next !== -1) {
+    return next
+  }
+  const prev = findPrevVisibleTabIndex(index)
+  if (prev !== -1) {
+    return prev
+  }
+  return -1
+}
+
 // Methods
 const emitTabChange = (prevIndex: number, nextIndex: number) => {
   emit('on-change', prevIndex, nextIndex)
@@ -359,12 +403,10 @@ const emitTabChange = (prevIndex: number, nextIndex: number) => {
 }
 
 const addTab = (item: Tab, updateFn?: (active: boolean, tabId?: string) => void) => {
-  const index = tabCount.value
+  const index = tabs.value.length
   item.tabId = `${item.title.replace(/ /g, '')}${index}`
-
-  // Store the update function with the tab
-  const tabWithUpdate = { ...item, updateActiveState: updateFn }
-  tabs.value.splice(index, 0, tabWithUpdate)
+  item.updateActiveState = updateFn
+  tabs.value.splice(index, 0, item)
 
   // Inform the child about the generated tabId and its initial active state
   if (updateFn) {
@@ -398,6 +440,7 @@ const rebuildTabsFromSchema = () => {
       shape: props.shape,
       icon: step.icon,
       customIcon: step.customIcon,
+      hidden: step.hidden,
       updateActiveState: undefined,
     }
 
@@ -432,7 +475,10 @@ const reset = () => {
   tabs.value.forEach((tab) => {
     tab.checked = false
   })
-  navigateToTab(0)
+  const firstVisible = visibleTabs.value[0]
+  if (firstVisible) {
+    navigateToTab(firstVisible.actualIndex)
+  }
 }
 
 const activateAll = () => {
@@ -442,21 +488,31 @@ const activateAll = () => {
   })
 }
 
-const hasBlockingValidationErrors = () => tabs.value.some((tab) => !!tab.validationError)
+const hasBlockingValidationErrors = () => visibleTabs.value.some((item) => !!item.tab.validationError)
 
 const navigateToTab = (index: number): boolean => {
-  const validate = index > activeTabIndex.value
+  const actualIndex = tabs.value[index]?.hidden ? getNearestVisibleTabIndex(index) : index
+  if (actualIndex === -1) {
+    return false
+  }
+  const validate = actualIndex > activeTabIndex.value
   const allowContinueOnValidationError = validate && props.skipValidationOnNext
-  if (index <= maxStep.value) {
+  if (actualIndex <= maxStep.value) {
     const cb = () => {
-      if (validate && index - activeTabIndex.value > 1) {
-        // validate all steps recursively until destination index
-        changeTab(activeTabIndex.value, activeTabIndex.value + 1)
-        beforeTabChange(activeTabIndex.value, cb, {
-          continueOnValidationError: allowContinueOnValidationError,
-        })
+      if (validate && actualIndex > activeTabIndex.value) {
+        // Move to the next visible step (skipping hidden ones) and validate recursively
+        const nextVisible = findNextVisibleTabIndex(activeTabIndex.value)
+        if (nextVisible !== -1 && nextVisible <= actualIndex) {
+          changeTab(activeTabIndex.value, nextVisible)
+          beforeTabChange(activeTabIndex.value, cb, {
+            continueOnValidationError: allowContinueOnValidationError,
+          })
+        } else {
+          changeTab(activeTabIndex.value, actualIndex)
+          afterTabChange(activeTabIndex.value)
+        }
       } else {
-        changeTab(activeTabIndex.value, index)
+        changeTab(activeTabIndex.value, actualIndex)
         afterTabChange(activeTabIndex.value)
       }
     }
@@ -469,17 +525,17 @@ const navigateToTab = (index: number): boolean => {
       cb()
     }
   }
-  return index <= maxStep.value
+  return actualIndex <= maxStep.value
 }
 
 const nextTab = () => {
-  const movingToNextStep = activeTabIndex.value < tabCount.value - 1
+  const nextVisibleIndex = findNextVisibleTabIndex(activeTabIndex.value)
+  const movingToNextStep = nextVisibleIndex !== -1
   const allowContinueOnValidationError = movingToNextStep && props.skipValidationOnNext
   const cb = () => {
-    if (activeTabIndex.value < tabCount.value - 1) {
-      const newIndex = activeTabIndex.value + 1
-      changeTab(activeTabIndex.value, newIndex)
-      afterTabChange(newIndex)
+    if (movingToNextStep) {
+      changeTab(activeTabIndex.value, nextVisibleIndex)
+      afterTabChange(nextVisibleIndex)
     } else {
       if (hasBlockingValidationErrors()) {
         emit('on-error', 'Cannot complete wizard while validation errors exist')
@@ -494,10 +550,11 @@ const nextTab = () => {
 }
 
 const prevTab = () => {
+  const prevVisibleIndex = findPrevVisibleTabIndex(activeTabIndex.value)
   const cb = () => {
-    if (activeTabIndex.value > 0) {
+    if (prevVisibleIndex !== -1) {
       setValidationError(null)
-      changeTab(activeTabIndex.value, activeTabIndex.value - 1)
+      changeTab(activeTabIndex.value, prevVisibleIndex)
     }
   }
   if (props.validateOnBack) {
@@ -508,9 +565,9 @@ const prevTab = () => {
 }
 
 const focusNextTab = () => {
-  const tabIndex = getFocusedTabIndex(tabs.value)
-  if (tabIndex !== -1 && tabIndex < tabs.value.length - 1) {
-    const tabToFocus = tabs.value[tabIndex + 1]
+  const visibleIndex = visibleTabs.value.findIndex((item) => `step-${item.tab.tabId}` === getFocusedElementId())
+  if (visibleIndex !== -1 && visibleIndex < visibleTabs.value.length - 1) {
+    const tabToFocus = visibleTabs.value[visibleIndex + 1].tab
     if (tabToFocus.checked) {
       // The DOM id used for the step element is `step-${tab.tabId}`
       findElementAndFocus(`step-${tabToFocus.tabId}`)
@@ -519,9 +576,9 @@ const focusNextTab = () => {
 }
 
 const focusPrevTab = () => {
-  const tabIndex = getFocusedTabIndex(tabs.value)
-  if (tabIndex !== -1 && tabIndex > 0) {
-    const toFocusId = tabs.value[tabIndex - 1].tabId
+  const visibleIndex = visibleTabs.value.findIndex((item) => `step-${item.tab.tabId}` === getFocusedElementId())
+  if (visibleIndex !== -1 && visibleIndex > 0) {
+    const toFocusId = visibleTabs.value[visibleIndex - 1].tab.tabId
     // The DOM id used for the step element is `step-${tab.tabId}`
     findElementAndFocus(`step-${toFocusId}`)
   }
@@ -746,7 +803,7 @@ const checkRouteChange = (route: any) => {
 
   let matchingTabIndex = -1
   const matchingTab = tabs.value.find((tab, index) => {
-    if (!tab.route) {
+    if (tab.hidden || !tab.route) {
       return false
     }
 
@@ -773,7 +830,6 @@ const checkRouteChange = (route: any) => {
   })
 
   if (matchingTab && !matchingTab.active) {
-    const shouldValidate = matchingTabIndex > activeTabIndex.value
     navigateToTab(matchingTabIndex)
   }
 }
@@ -813,11 +869,19 @@ const activateTabAndCheckStep = (index: number) => {
 }
 
 const initializeTabs = () => {
+  const firstVisible = visibleTabs.value[0]
+  if (!firstVisible) {
+    return
+  }
+
   if (tabs.value.length > 0 && props.startIndex === 0) {
-    activateTab(activeTabIndex.value)
+    activateTab(firstVisible.actualIndex)
   }
   if (props.startIndex < tabs.value.length) {
-    activateTabAndCheckStep(props.startIndex)
+    const startIndex = tabs.value[props.startIndex]?.hidden ? getNearestVisibleTabIndex(props.startIndex) : props.startIndex
+    if (startIndex !== -1) {
+      activateTabAndCheckStep(startIndex)
+    }
   } else {
     console.warn(
       `Prop startIndex set to ${props.startIndex} is greater than the number of tabs - ${tabs.value.length}. Make sure that the starting index is less than the number of tabs registered`,
@@ -877,12 +941,31 @@ watch(
       rebuildTabsFromSchema()
       // Try to keep the same step active if still visible
       const newIndex = tabs.value.findIndex((t) => t.tabId === prevActiveId)
-      if (newIndex !== -1) {
+      if (newIndex !== -1 && !tabs.value[newIndex]?.hidden) {
         activateTabAndCheckStep(newIndex)
+      } else if (visibleTabs.value.length > 0) {
+        const fallback = getNearestVisibleTabIndex(newIndex !== -1 ? newIndex : activeTabIndex.value)
+        if (fallback !== -1) {
+          activateTabAndCheckStep(fallback)
+        }
       }
     }
   },
   { deep: true },
+)
+
+// If the currently active tab becomes hidden, move to the nearest visible one
+watch(
+  visibleTabs,
+  () => {
+    if (tabs.value[activeTabIndex.value]?.hidden && visibleTabs.value.length > 0) {
+      const fallback = getNearestVisibleTabIndex(activeTabIndex.value)
+      if (fallback !== -1 && fallback !== activeTabIndex.value) {
+        changeTab(activeTabIndex.value, fallback)
+      }
+    }
+  },
+  { flush: 'post' },
 )
 
 // Route watching with proper Vue Router integration
@@ -929,8 +1012,9 @@ const setupRouteWatching = () => {
 onMounted(() => {
   if (useSchemaMode.value) {
     rebuildTabsFromSchema()
-    if (tabs.value.length > 0) {
-      activateTabAndCheckStep(activeTabIndex.value)
+    const startIndex = tabs.value[activeTabIndex.value]?.hidden ? getNearestVisibleTabIndex(activeTabIndex.value) : activeTabIndex.value
+    if (startIndex !== -1 && tabs.value.length > 0) {
+      activateTabAndCheckStep(startIndex)
     }
   } else {
     initializeTabs()

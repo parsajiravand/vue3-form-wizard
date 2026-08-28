@@ -14,6 +14,7 @@ export interface Tab {
   shape: string;
   icon?: string;
   customIcon?: string;
+  hidden?: boolean;
 }
 
 // Shared wizard data bag used in schema mode and for consumers
@@ -29,6 +30,7 @@ export interface FormWizardProps {
   backButtonText?: string;
   finishButtonText?: string;
   hideButtons?: boolean;
+  hideFinishButton?: boolean;
   validateOnBack?: boolean;
   color?: string;
   errorColor?: string;
@@ -90,6 +92,7 @@ export interface TabContentProps {
   afterChange?: () => void;
   route?: string | object;
   additionalInfo?: Record<string, any>;
+  hidden?: boolean;
 }
 
 // Slot props interfaces
@@ -130,6 +133,7 @@ export interface FormWizardSchemaStep {
   component?: string;
   slotName?: string;
   route?: string | object;
+  hidden?: boolean;
 }
 
 export interface FormWizardSchema {
