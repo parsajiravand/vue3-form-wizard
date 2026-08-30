@@ -30,8 +30,15 @@ const props = withDefaults(defineProps<{
 });
 
 // Injected functions from parent FormWizard
-const addTab = inject<(tab: any, updateFn: (active: boolean) => void) => void>('addTab');
+const addTab = inject<
+  (
+    tab: any,
+    updateFn: (active: boolean, tabId?: string) => void,
+    meta?: { uid?: number; el?: Node | null }
+  ) => void
+>('addTab');
 const removeTab = inject<(tab: any) => void>('removeTab');
+const updateTab = inject<(uid: number | undefined, patch: any) => void>('updateTab');
 
 // Reactive data (driven by FormWizard via updateActiveState)
 const active = ref(false);
@@ -56,21 +63,27 @@ const errorColor = computed(() => {
   return parent?.props?.errorColor || '#8b0000';
 });
 
-// Create tab object to pass to parent (FormWizard manages active/checked/validationError)
-const tabObject = computed(() => ({
+// Everything the wizard derives from this component's props, kept separate so
+// it can be pushed again whenever the props change.
+const tabProps = computed(() => ({
   title: props.title,
   icon: props.icon,
   customIcon: props.customIcon,
   beforeChange: props.beforeChange,
   afterChange: props.afterChange,
   route: props.route,
+  color: color.value,
+  errorColor: errorColor.value,
+  shape: shape.value,
+}));
+
+// Create tab object to pass to parent (FormWizard manages active/checked/validationError)
+const tabObject = computed(() => ({
+  ...tabProps.value,
   active: false,
   checked: false,
   validationError: null as string | null,
   tabId: tabId.value,
-  color: color.value,
-  errorColor: errorColor.value,
-  shape: shape.value,
 }));
 
 // Function to update active state (and initial tabId) from FormWizard
@@ -85,13 +98,30 @@ const updateActiveState = (newActive: boolean, newTabId?: string) => {
 // Lifecycle hooks
 onMounted(() => {
   if (addTab) {
-    addTab(tabObject.value, updateActiveState);
+    // The uid identifies this step on unregister, the element (a comment node
+    // while lazy and inactive) tells the wizard where it sits among siblings.
+    addTab(tabObject.value, updateActiveState, {
+      uid: instance?.uid,
+      el: (instance?.vnode.el as Node | null) ?? null,
+    });
   }
 });
 
+// `post` so the element reference reflects the DOM after this update.
+watch(
+  tabProps,
+  (value) => {
+    updateTab?.(instance?.uid, {
+      ...value,
+      el: (instance?.vnode.el as Node | null) ?? null,
+    });
+  },
+  { flush: 'post' }
+);
+
 onBeforeUnmount(() => {
   if (removeTab) {
-    removeTab(tabObject.value);
+    removeTab(instance?.uid);
   }
 });
 </script>

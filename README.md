@@ -36,7 +36,9 @@ yarn add vue3-form-wizard
 - **Schema mode**: Declarative steps with `schema`, `condition`, `validate`, and `v-model`
 - **Classic mode**: Slot-based steps with `<tab-content>`
 - **Vue Router**: URL sync with `route` prop (optional)
-- **Accessibility**: ARIA roles, keyboard navigation
+- **Dynamic steps**: Add or remove steps with `v-if` at runtime
+- **RTL**: Right-to-left content, and optionally right-to-left steps
+- **Accessibility**: ARIA tablist semantics, full keyboard support
 - **TypeScript**: Full type support
 
 ## 🔧 **[Document](https://vue3-form-wizard-document.netlify.app/usage/)**
@@ -253,11 +255,54 @@ Step components receive `data` and `update-data` props. Use `condition` to hide 
 
 ## RTL support
 
-You can enable RTL for the wizard content without flipping the steps:
-If you also want the horizontal steps, progress bar, and footer buttons to run from right to left, use `reverse-horizontal` and `rtl` together.
+Two independent props, so you can flip the content without flipping the stepper:
+
+| Prop                 | Effect                                                                      |
+| -------------------- | --------------------------------------------------------------------------- |
+| `rtl`                | Renders step **content** right-to-left. Steps and progress bar stay as they are. |
+| `reverse-horizontal` | Runs the **steps, progress bar and footer buttons** right-to-left. Horizontal layouts only. |
+
+Use both together for a fully right-to-left wizard:
+
+```vue
+<template>
+  <form-wizard rtl reverse-horizontal title="ثبت‌نام" next-button-text="بعدی" back-button-text="قبلی" finish-button-text="پایان">
+    <tab-content title="اطلاعات">…</tab-content>
+    <tab-content title="بررسی">…</tab-content>
+  </form-wizard>
+</template>
+```
+
+Arrow-key navigation follows what you see: with `reverse-horizontal`, <kbd>→</kbd> moves to the step on the right, which is the *previous* step.
 
 Sample Demo:
 [RTL support](https://vue3-form-wizard-document.netlify.app/demos/#rtl-support)
+
+## Dynamic steps
+
+Steps can be added or removed at runtime and the wizard keeps up: a step revealed by `v-if` appears at its position in the markup, not at the end, and a removed step leaves the navigation, the progress bar and the step count.
+
+```vue
+<template>
+  <form-wizard>
+    <tab-content title="Account">…</tab-content>
+    <tab-content v-if="needsBilling" title="Billing">…</tab-content>
+    <tab-content title="Review">…</tab-content>
+  </form-wizard>
+</template>
+```
+
+Changing a step's props later — `title` when the language changes, `route`, `before-change` — is picked up too. In schema mode, use a step `condition` instead.
+
+## Accessibility
+
+- The stepper is a proper `tablist` / `tab` / `tabpanel` structure, with `aria-controls` and `aria-labelledby` wired between each step and its panel.
+- Steps that have not been reached are excluded from the tab order and marked `aria-disabled`.
+- <kbd>←</kbd> / <kbd>→</kbd> move focus between reachable steps, mirrored under `reverse-horizontal`.
+- <kbd>Enter</kbd> and <kbd>Space</kbd> both activate steps and the Back / Next / Finish controls.
+- Back, Next and Finish are disabled while an async `before-change` is in flight.
+
+If you replace the `next` / `prev` / `finish` slots, render a plain element inside them — the wrapper the wizard provides already carries `role="button"` and the keyboard handlers.
 
 
 

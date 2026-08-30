@@ -1,13 +1,13 @@
 <template>
-  <li :class="{ active: tab.active }">
+  <li role="presentation" :class="{ active: tab.active }">
     <a :class="{ disabled: !tab.checked }" :style="cursorStyle">
       <div
         class="wizard-icon-circle md"
         role="tab"
-        :tabindex="tab.checked ? 0 : ''"
+        :tabindex="tab.checked ? 0 : -1"
         :id="`step-${tab.tabId}`"
         :aria-controls="tab.tabId"
-        :aria-disabled="tab.active"
+        :aria-disabled="!tab.checked"
         :aria-selected="tab.active"
         :class="{
           checked: tab.checked,

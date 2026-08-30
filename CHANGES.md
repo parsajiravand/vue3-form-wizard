@@ -6,6 +6,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-08
+### Fixed
+- **Removing a step left it in the wizard.** `removeTab` compared object identity against a copy `addTab` had stored, so it never matched. A `<tab-content>` hidden with `v-if` unmounted its panel but kept its entry in the navigation, progress bar and step count. Steps are now unregistered by the child's uid.
+- **Steps mounted later were appended instead of ordered.** A step revealed by `v-if` registered last and appeared at the end of the navigation regardless of its position in the markup. Order now follows DOM position, reconciled once the DOM settles.
+- **`<tab-content>` prop changes were ignored.** The wizard registered a step once and never saw later changes to `title`, `icon`, `route`, `before-change` or `after-change` — a problem when Vue reuses a step in place, or when titles are translated at runtime.
+- **Every wizard on a page rendered `id="fw_1"`.** The instance counter lived inside `<script setup>`, so it reset for each instance. Generated step ids are now scoped to the wizard id too, so arrow-key focus can no longer jump into a different wizard.
+- **Removing the active first step set `activeTabIndex` to `-1`**, leaving no step selected and `maxStep` negative.
+- **`reset()` threw** on a wizard with no steps (`Cannot set properties of undefined`). Validation state is now written defensively.
+- Generated step ids are sanitized, so untitled steps no longer produce ids like `0` that are invalid in CSS selectors.
+- Schema step ids no longer include the step index, so the active step is retained when a conditional step is added or removed.
+- Vue no longer warns that a component was made reactive when using `schema-components`.
+- The progress bar no longer computes an infinite width when there are no steps.
+
+### Accessibility
+- Steps respond to <kbd>Space</kbd> as well as <kbd>Enter</kbd>, as do the Back/Next/Finish controls (WCAG 2.1.1).
+- `aria-disabled` was inverted: the current step was announced as disabled while unreachable steps were announced as enabled. It now reflects whether a step has been reached.
+- Unreachable steps render `tabindex="-1"` instead of an invalid empty `tabindex`.
+- `<li>` wrappers inside the tablist are marked `role="presentation"` so the tablist/tab structure is exposed correctly.
+- Arrow keys follow the visual order and are mirrored under `reverse-horizontal`.
+- The Finish button is disabled while an async `beforeChange` is in flight, matching Back and Next.
+
+### Changed
+- A step inserted ahead of the active one no longer pulls the user back to it and no longer resets `maxStep`; the user keeps their place. This code path was unreachable in every released version, so no existing behaviour changes.
+- Generated `tabId` values are now `<wizardId>-<slug>-<n>` (schema mode: `<wizardId>-<stepId>`). The documented `step-${tabId}` convention is unchanged; only the generated value differs.
+
+### Added
+- `updateTab` is provided to `<tab-content>` and exposed on the wizard instance, so a step's registration can be refreshed after its props change.
+- Docs: RTL prop reference, dynamic steps, and an accessibility section in the README.
+
+
 ## [1.0.0] - 2025-03
 ### Added
 - **Schema mode**: Declarative API with `schema`, `schema-components`, and `v-model` for shared wizard data
