@@ -98,13 +98,33 @@ jobs:
           }
 
       - name: Publish
-        run: |
-          npm publish --provenance --access public --tag "${{ inputs.tag || 'latest' }}" || {
-            echo "::warning::Publish with provenance failed; retrying without it."
-            npm publish --access public --tag "${{ inputs.tag || 'latest' }}"
-          }
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          DIST_TAG: ${{ inputs.tag || 'latest' }}
+        run: |
+          set +e
+          OUT=$(npm publish --provenance --access public --tag "$DIST_TAG" 2>&1)
+          CODE=$?
+          echo "$OUT"
+
+          if [ $CODE -eq 0 ]; then
+            exit 0
+          fi
+
+          # An OTP prompt means the token type is wrong, not that the publish is
+          # retryable. Only Automation tokens bypass 2FA on write.
+          if echo "$OUT" | grep -q "EOTP"; then
+            echo "::error::npm asked for a one-time password. NPM_TOKEN must be an *Automation* token - granular and classic Publish tokens still require 2FA. Regenerate at npmjs.com > Access Tokens > Generate New Token > Automation, then update the NPM_TOKEN secret."
+            exit 1
+          fi
+
+          if echo "$OUT" | grep -q "E403"; then
+            echo "::error::npm rejected the publish as forbidden. The token authenticates but lacks write access to this package."
+            exit 1
+          fi
+
+          echo "::warning::Publish with provenance failed; retrying without it."
+          npm publish --access public --tag "$DIST_TAG"
 
   github-release:
     name: Create GitHub release
