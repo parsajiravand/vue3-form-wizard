@@ -1,0 +1,121 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "npm dist-tag to publish under"
+        required: false
+        default: "latest"
+
+# Required for npm provenance — links the published tarball to this workflow run.
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    name: Publish to npm
+    runs-on: ubuntu-latest
+    environment: npm
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          registry-url: https://registry.npmjs.org
+
+      - run: npm ci
+
+      # Full gate: typecheck, tests, build.
+      - name: Verify
+        run: npm run verify
+
+      - name: Confirm the tag matches package.json
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          TAG="${GITHUB_REF#refs/tags/v}"
+          PKG="$(node -p "require('./package.json').version")"
+          if [ "$TAG" != "$PKG" ]; then
+            echo "::error::tag v$TAG does not match package.json version $PKG"
+            exit 1
+          fi
+          echo "publishing $PKG"
+
+      # Catches a malformed exports map, missing files, or a wrong main/module
+      # before consumers do.
+      # --pack npm is required: yarn.lock makes publint default to `yarn pack`,
+      # which drops the gitignored dist/ and reports it as missing.
+      - name: Package validity
+        run: npx --yes publint@latest --pack npm
+
+      # The wizard ships no runtime dependencies, so no advisory can reach a
+      # consumer through it. Asserting that keeps it true.
+      - name: Assert no runtime dependencies
+        run: |
+          COUNT=$(node -p "Object.keys(require('./package.json').dependencies || {}).length")
+          echo "runtime dependencies: $COUNT"
+          if [ "$COUNT" != "0" ]; then
+            echo "::error::This package must have zero runtime dependencies."
+            exit 1
+          fi
+
+      # Vue must stay a peer import. Asserting the import exists is the real
+      # test; grepping for Vue identifiers would match the import names
+      # themselves and pass only when Vue *is* bundled.
+      - name: Assert Vue is external
+        run: |
+          grep -q 'from *"vue"' dist/vue3-form-wizard.es.js \
+            || { echo "::error::ES bundle does not import from \"vue\" - Vue may have been inlined."; exit 1; }
+          grep -q 'require("vue")' dist/vue3-form-wizard.umd.js \
+            || { echo "::error::UMD bundle does not require \"vue\" - Vue may have been inlined."; exit 1; }
+          SIZE=$(wc -c < dist/vue3-form-wizard.es.js)
+          echo "ES bundle: $SIZE bytes"
+          if [ "$SIZE" -gt 120000 ]; then
+            echo "::error::ES bundle is $SIZE bytes; Vue was probably inlined."
+            exit 1
+          fi
+          echo "OK: Vue is external"
+
+      - name: Publish
+        run: npm publish --provenance --access public --tag "${{ inputs.tag || 'latest' }}"
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  github-release:
+    name: Create GitHub release
+    runs-on: ubuntu-latest
+    needs: publish
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      # Lifts this version's section straight out of CHANGES.md.
+      - name: Extract release notes
+        run: |
+          VERSION="${GITHUB_REF#refs/tags/v}"
+          awk -v header="## [$VERSION]" '
+            index($0, header) == 1 { found = 1; next }
+            found && /^## \[/ { exit }
+            found { print }
+          ' CHANGES.md > release-notes.md
+          if [ ! -s release-notes.md ]; then
+            echo "No CHANGES.md entry found for $VERSION." > release-notes.md
+          fi
+          cat release-notes.md
+
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${GITHUB_REF#refs/tags/v}"
+          gh release create "v$VERSION" \
+            --title "v$VERSION" \
+            --notes-file release-notes.md \
+            --verify-tag

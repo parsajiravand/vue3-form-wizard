@@ -325,11 +325,41 @@ npm run test
 ## Scripts
 
 
-| Command         | Description                   |
-| --------------- | ----------------------------- |
-| `npm run dev`   | Start dev server with samples |
-| `npm run build` | Build library and types       |
-| `npm run test`  | Run Vitest test suite         |
+| Command             | Description                          |
+| ------------------- | ------------------------------------ |
+| `npm run dev`       | Start dev server with samples        |
+| `npm run build`     | Build library and types              |
+| `npm run test`      | Run Vitest test suite                |
+| `npm run typecheck` | Type-check without emitting          |
+| `npm run verify`    | Typecheck + test + build (CI gate)   |
+
+## Releasing
+
+Publishing is driven by tags — pushing `v*` builds, verifies and publishes to npm,
+then opens a GitHub release using that version's section of `CHANGES.md`.
+
+```bash
+# 1. bump the version and write its CHANGES.md entry, then commit
+npm version 1.3.0 --no-git-tag-version
+git commit -am "Release 1.3.0"
+
+# 2. tag and push - the workflow does the rest
+git tag -a v1.3.0 -m "v1.3.0"
+git push origin master --follow-tags
+```
+
+The workflow refuses to publish if the tag and `package.json` version disagree.
+`npm run verify` runs as `prepublishOnly` too, so a manual `npm publish` can
+never ship a stale `dist/`.
+
+One-time setup: add an `NPM_TOKEN` repository secret (an npm **Automation**
+granular access token with write access to this package). The workflow publishes
+with `--provenance`, which links the tarball on npm back to the exact commit and
+workflow run that produced it.
+
+`.github/workflows/ci.yml` runs typecheck, tests and the build on Node 20 and 22
+for every push and pull request, plus packaging checks (`publint`, bundle
+externality, zero runtime dependencies).
 
 
 ## Credits
