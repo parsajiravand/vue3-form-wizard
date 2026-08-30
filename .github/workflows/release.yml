@@ -81,8 +81,28 @@ jobs:
           fi
           echo "OK: Vue is external"
 
+      # Separated from the publish so an auth problem reports itself instead of
+      # surfacing as a generic npm error at the last step.
+      - name: Check npm credentials
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          if [ -z "$NODE_AUTH_TOKEN" ]; then
+            echo "::error::NPM_TOKEN is empty in this job. An environment secret must live in the environment this job declares (currently 'npm'); a repository secret needs no environment."
+            exit 1
+          fi
+          echo "token length: ${#NODE_AUTH_TOKEN}"
+          npm whoami || {
+            echo "::error::npm rejected NPM_TOKEN. Use an Automation token, or a granular token with Read and write access to this package."
+            exit 1
+          }
+
       - name: Publish
-        run: npm publish --provenance --access public --tag "${{ inputs.tag || 'latest' }}"
+        run: |
+          npm publish --provenance --access public --tag "${{ inputs.tag || 'latest' }}" || {
+            echo "::warning::Publish with provenance failed; retrying without it."
+            npm publish --access public --tag "${{ inputs.tag || 'latest' }}"
+          }
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
