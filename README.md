@@ -335,32 +335,31 @@ npm run test
 
 ## Releasing
 
-Publishing is driven by tags — pushing `v*` builds, verifies and publishes to npm,
-then opens a GitHub release using that version's section of `CHANGES.md`.
+Publishing is manual. `npm run verify` is wired to `prepublishOnly`, so
+`npm publish` re-runs the typecheck, the tests and the build first and cannot
+ship a stale `dist/`.
 
 ```bash
-# 1. bump the version and write its CHANGES.md entry, then commit
+# 1. bump the version and write its CHANGES.md entry
 npm version 1.3.0 --no-git-tag-version
 git commit -am "Release 1.3.0"
 
-# 2. tag and push - the workflow does the rest
+# 2. publish (prompts for your 2FA code)
+npm publish
+
+# 3. tag the released commit
 git tag -a v1.3.0 -m "v1.3.0"
 git push origin master --follow-tags
 ```
 
-The workflow refuses to publish if the tag and `package.json` version disagree.
-`npm run verify` runs as `prepublishOnly` too, so a manual `npm publish` can
-never ship a stale `dist/`.
-
-One-time setup: add an `NPM_TOKEN` repository secret (an npm **Automation**
-granular access token with write access to this package). The workflow publishes
-with `--provenance`, which links the tarball on npm back to the exact commit and
-workflow run that produced it.
+Publish with **npm, not yarn**. `dist/` is gitignored, and `yarn pack` excludes
+gitignored paths even when `files` lists them — a `yarn publish` would ship a
+tarball with no build output. Check what is about to go out with
+`npm pack --dry-run`.
 
 `.github/workflows/ci.yml` runs typecheck, tests and the build on Node 20 and 22
 for every push and pull request, plus packaging checks (`publint`, bundle
 externality, zero runtime dependencies).
-
 
 ## Credits
 

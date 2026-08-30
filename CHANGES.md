@@ -36,7 +36,6 @@ Generated `tabId` values keep their existing shape, and no prop, event, slot or 
 - `updateTab` is provided to `<tab-content>` and exposed on the wizard instance, so a step's registration can be refreshed after its props change.
 - `findElementAndFocus` takes an optional root element to scope the lookup.
 - Docs: RTL prop reference, dynamic steps, and an accessibility section in the README.
-- Tag-driven release workflow (`.github/workflows/release.yml`): pushing a `v*` tag verifies, publishes to npm with provenance, and opens a GitHub release from that version's `CHANGES.md` section. It refuses to publish when the tag and `package.json` version disagree.
 - CI workflow (`.github/workflows/ci.yml`): typecheck, tests and build on Node 20 and 22, plus packaging checks — `publint`, Vue externality, zero runtime dependencies, and a stylesheet-emitted assertion.
 - `typecheck` and `verify` scripts, with `verify` wired to `prepublishOnly` so a manual publish cannot ship a stale `dist/`.
 
