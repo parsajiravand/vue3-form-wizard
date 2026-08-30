@@ -5,17 +5,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
-### Added
-- Tag-driven release workflow (`.github/workflows/release.yml`): pushing a `v*` tag verifies, publishes to npm with provenance, and opens a GitHub release from that version's `CHANGES.md` section. It refuses to publish when the tag and `package.json` version disagree.
-- CI workflow (`.github/workflows/ci.yml`): typecheck, tests and build on Node 20 and 22, plus packaging checks — `publint`, Vue externality, zero runtime dependencies, and a stylesheet-emitted assertion.
-- `typecheck` and `verify` scripts, with `verify` wired to `prepublishOnly` so a manual publish cannot ship a stale `dist/`.
-
-### Fixed
-- `repository` is now an object; npm did not recognise the bare URL string as a valid shorthand.
-
-### Known issues
-- `require("vue3-form-wizard")` resolves to ESM: `exports["."].require` points at `dist/vue3-form-wizard.umd.js`, but `"type": "module"` makes Node read that `.js` as ESM. Fixing it means emitting a `.cjs` alongside the existing `.umd.js`, which CDN consumers link to directly. Tracked by the report-only `attw` step in CI.
-- The emitted `.d.ts` files contain `.vue` imports that do not resolve for consumers.
 
 ## [1.2.0] - 2026-08
 ### Fixed
@@ -28,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - In schema mode the active step is retained when a conditional step is added or removed; it is now tracked by the schema step `id` rather than by a position-dependent `tabId`.
 - Vue no longer warns that a component was made reactive when using `schema-components`.
 - The progress bar no longer computes an infinite width when there are no steps.
+- `repository` is now an object; npm did not recognise the bare URL string as a valid shorthand.
 
 ### Accessibility
 - Steps respond to <kbd>Space</kbd> as well as <kbd>Enter</kbd>, as do the Back/Next/Finish controls (WCAG 2.1.1).
@@ -46,6 +36,13 @@ Generated `tabId` values keep their existing shape, and no prop, event, slot or 
 - `updateTab` is provided to `<tab-content>` and exposed on the wizard instance, so a step's registration can be refreshed after its props change.
 - `findElementAndFocus` takes an optional root element to scope the lookup.
 - Docs: RTL prop reference, dynamic steps, and an accessibility section in the README.
+- Tag-driven release workflow (`.github/workflows/release.yml`): pushing a `v*` tag verifies, publishes to npm with provenance, and opens a GitHub release from that version's `CHANGES.md` section. It refuses to publish when the tag and `package.json` version disagree.
+- CI workflow (`.github/workflows/ci.yml`): typecheck, tests and build on Node 20 and 22, plus packaging checks — `publint`, Vue externality, zero runtime dependencies, and a stylesheet-emitted assertion.
+- `typecheck` and `verify` scripts, with `verify` wired to `prepublishOnly` so a manual publish cannot ship a stale `dist/`.
+
+### Known issues
+- `require("vue3-form-wizard")` resolves to ESM: `exports["."].require` points at `dist/vue3-form-wizard.umd.js`, but `"type": "module"` makes Node read that `.js` as ESM. Fixing it means emitting a `.cjs` alongside the existing `.umd.js`, which CDN consumers link to directly. Tracked by the report-only `attw` step in CI.
+- The emitted `.d.ts` files contain `.vue` imports that do not resolve for consumers.
 
 ## [1.1.1] - 2026-03-19
 ### Fixed
