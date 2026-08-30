@@ -9,10 +9,10 @@
       background: $danger-states-color !important;
     }
   }
-  @include wizard-size('xs', 40px, 16px);
-  @include wizard-size('sm', 50px, 20px);
-  @include wizard-size('md', 70px, 24px);
-  @include wizard-size('lg', 90px, 28px);
+  @include wizard-size("xs", 40px, 16px);
+  @include wizard-size("sm", 50px, 20px);
+  @include wizard-size("md", 70px, 24px);
+  @include wizard-size("lg", 90px, 28px);
 
   .wizard-icon-circle {
     font-size: 18px;
@@ -80,7 +80,7 @@
   .category {
     font-size: 14px;
     font-weight: 400;
-    color: #9A9A9A;
+    color: #9a9a9a;
     margin-bottom: 0px;
     text-align: center;
   }
@@ -93,9 +93,9 @@
 
       .wizard-progress-bar {
         box-shadow: none;
-        -webkit-transition: width .3s ease;
-        -o-transition: width .3s ease;
-        transition: width .3s ease;
+        -webkit-transition: width 0.3s ease;
+        -o-transition: width 0.3s ease;
+        transition: width 0.3s ease;
       }
     }
   }
@@ -120,18 +120,18 @@
   }
   @media screen and (max-width: 350px) {
     .wizard-card-footer {
-      display:flex;
+      display: flex;
       justify-content: center;
       flex-direction: column;
       .wizard-footer-left,
       .wizard-footer-right {
         float: none;
-        flex:1;
+        flex: 1;
         display: flex;
-        justify-content:center;
+        justify-content: center;
       }
-      .wizard-footer-right button{
-        margin-top:10px;
+      .wizard-footer-right button {
+        margin-top: 10px;
       }
     }
   }
@@ -191,11 +191,10 @@
         flex-direction: row-reverse;
       }
     }
-
-    // Disable clearfix hack on flex footer so buttons can align correctly
-    .wizard-card-footer.clearfix::after {
-      content: none;
-      display: none;
-    }
+  }
+  // Disable clearfix hack on flex footer so buttons can align correctly
+  .wizard-card-footer.clearfix::after {
+    content: none;
+    display: none;
   }
 }

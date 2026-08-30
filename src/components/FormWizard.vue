@@ -10,8 +10,8 @@
         'fw-horizontal-reverse': reverseHorizontal,
       },
     ]"
-    @keyup.right="focusNextTab"
-    @keyup.left="focusPrevTab"
+    @keyup.right="onArrowRight"
+    @keyup.left="onArrowLeft"
   >
     <div class="wizard-header" v-if="$slots['title']">
       <slot name="title">
@@ -46,6 +46,12 @@
                 : navigateToTab(index)
             "
             @keyup.enter="navigateToTab(index)"
+            @keydown.space.prevent
+            @keyup.space="
+              disableBackOnClickStep || disableBack
+                ? false
+                : navigateToTab(index)
+            "
             :transition="transition"
             :index="index"
             :disable-back-on-click-step="
@@ -77,6 +83,8 @@
           <span
             @click="prevTab"
             @keyup.enter="prevTab"
+            @keydown.space.prevent
+            @keyup.space="prevTab"
             v-if="displayPrevButton"
             role="button"
             tabindex="0"
@@ -95,12 +103,14 @@
           <span
             @click="nextTab"
             @keyup.enter="nextTab"
+            @keydown.space.prevent
+            @keyup.space="nextTab"
             v-if="isLastStep"
             role="button"
             tabindex="0"
           >
             <slot name="finish" v-bind="slotProps">
-              <wizard-button :style="fillButtonStyle">
+              <wizard-button :style="fillButtonStyle" :disabled="loading">
                 {{ finishButtonText }}
               </wizard-button>
             </slot>
@@ -108,6 +118,8 @@
           <span
             @click="nextTab"
             @keyup.enter="nextTab"
+            @keydown.space.prevent
+            @keyup.space="nextTab"
             role="button"
             tabindex="0"
             v-else
@@ -124,11 +136,17 @@
   </div>
 </template>
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onBeforeUnmount, provide, getCurrentInstance } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount, provide, getCurrentInstance, markRaw, toRaw, nextTick } from 'vue'
 import type { FormWizardSchema, WizardData } from "../types";
 import { default as WizardButton } from "./WizardButton.vue";
 import { default as WizardStep } from "./WizardStep.vue";
-import { isPromise, findElementAndFocus, getFocusedTabIndex } from "./helpers.js";
+import {
+  isPromise,
+  findElementAndFocus,
+  getFocusedTabIndex,
+  nextWizardId,
+  slugifyTabTitle,
+} from "./helpers.js";
 
 
 interface Tab {
@@ -146,6 +164,16 @@ interface Tab {
   icon?: string;
   customIcon?: string;
   updateActiveState?: (active: boolean, tabId?: string) => void;
+  /** Identity of the registering <tab-content>, used to unregister it. */
+  uid?: number;
+  /** DOM anchor of the registering <tab-content>, used to keep step order. */
+  el?: Node | null;
+}
+
+/** Registration details supplied by <tab-content> when it mounts. */
+interface TabMeta {
+  uid?: number;
+  el?: Node | null;
 }
 
 
@@ -198,8 +226,7 @@ const props = withDefaults(defineProps<{
   reverseHorizontal: false,
 });
 
-let wizardInstanceCounter = 0;
-const internalWizardId = `fw_${++wizardInstanceCounter}`;
+const internalWizardId = nextWizardId();
 
 // Generate ID if not provided (stable per instance in a given runtime)
 const wizardId = computed(() => props.id || internalWizardId);
@@ -272,7 +299,11 @@ const currentSchemaComponent = computed(() => {
   if (!step || !props.schemaComponents) return null;
 
   const key = step.component || step.id;
-  return props.schemaComponents[key] || null;
+  const component = props.schemaComponents[key];
+
+  // Components arrive through a reactive prop; hand Vue the raw definition so
+  // it does not warn about (and pay for) proxying a component.
+  return component ? markRaw(toRaw(component)) : null;
 });
 
 // Store component instance and router references for later use
@@ -347,7 +378,9 @@ const reverseHorizontal = computed(
 
 const displayPrevButton = computed(() => activeTabIndex.value !== 0);
 
-const stepPercentage = computed(() => (1 / (tabCount.value * 2)) * 100);
+const stepPercentage = computed(() =>
+  tabCount.value === 0 ? 0 : (1 / (tabCount.value * 2)) * 100
+);
 
 const progress = computed(() => {
   let percentage = 0;
@@ -391,12 +424,107 @@ const emitTabChange = (prevIndex: number, nextIndex: number) => {
   emit("update:startIndex", nextIndex);
 };
 
-const addTab = (item: Tab, updateFn?: (active: boolean, tabId?: string) => void) => {
-  const index = tabCount.value;
-  item.tabId = `${item.title.replace(/ /g, "")}${index}`;
+// `Node.DOCUMENT_POSITION_*`, spelled out so this stays SSR-safe.
+const DOCUMENT_POSITION_DISCONNECTED = 1;
+const DOCUMENT_POSITION_PRECEDING = 2;
+const DOCUMENT_POSITION_FOLLOWING = 4;
+
+/**
+ * -1 when `a` comes first, 1 when `b` does, 0 when they cannot be compared.
+ * Works on detached trees too, so it does not depend on the wizard being
+ * mounted into the live document.
+ */
+const compareNodes = (a?: Node | null, b?: Node | null): number => {
+  if (!a || !b || a === b || typeof a.compareDocumentPosition !== "function") {
+    return 0;
+  }
+
+  const position = a.compareDocumentPosition(b);
+  if (position & DOCUMENT_POSITION_DISCONNECTED) return 0;
+  if (position & DOCUMENT_POSITION_FOLLOWING) return -1;
+  if (position & DOCUMENT_POSITION_PRECEDING) return 1;
+  return 0;
+};
+
+/**
+ * Tabs register on mount, which is not the order they appear in the template:
+ * a step revealed later by `v-if` mounts last. Place it by DOM position so the
+ * navigation always mirrors the markup.
+ */
+const resolveTabIndex = (el?: Node | null): number => {
+  if (!el) {
+    return tabCount.value;
+  }
+
+  const index = tabs.value.findIndex((tab) => compareNodes(el, tab.el) < 0);
+  return index === -1 ? tabCount.value : index;
+};
+
+const compareTabsByDom = (a: Tab, b: Tab): number => compareNodes(a.el, b.el);
+
+/**
+ * A step inserted in the middle is not always attached to the document yet
+ * when it registers, so settle the order once the DOM has caught up. The
+ * active step is tracked by identity so the user is not moved.
+ */
+const sortTabsByDomOrder = () => {
+  if (tabs.value.length < 2) {
+    return;
+  }
+
+  const activeTab = tabs.value[activeTabIndex.value];
+  const before = tabs.value.slice();
+  tabs.value.sort(compareTabsByDom);
+
+  if (tabs.value.every((tab, index) => tab === before[index])) {
+    return;
+  }
+
+  if (activeTab) {
+    const newIndex = tabs.value.indexOf(activeTab);
+    if (newIndex !== -1 && newIndex !== activeTabIndex.value) {
+      activeTabIndex.value = newIndex;
+      maxStep.value = Math.max(maxStep.value, newIndex);
+    }
+  }
+};
+
+let tabSortScheduled = false;
+const scheduleTabSort = () => {
+  if (tabSortScheduled) {
+    return;
+  }
+  tabSortScheduled = true;
+  nextTick(() => {
+    tabSortScheduled = false;
+    sortTabsByDomOrder();
+  });
+};
+
+let tabIdCounter = 0;
+
+// Scoped to the wizard id so two wizards on one page never share a step id.
+const createTabId = (title: string) =>
+  `${wizardId.value}-${slugifyTabTitle(title)}-${++tabIdCounter}`;
+
+const addTab = (
+  item: Tab,
+  updateFn?: (active: boolean, tabId?: string) => void,
+  meta?: TabMeta
+) => {
+  const index = resolveTabIndex(meta?.el);
+  item.tabId = createTabId(item.title);
 
   // Store the update function with the tab
-  const tabWithUpdate = { ...item, updateActiveState: updateFn };
+  const tabWithUpdate = {
+    ...item,
+    updateActiveState: updateFn,
+    uid: meta?.uid,
+    el: meta?.el ?? null,
+  };
+  // Tracked by identity so a step inserted ahead of the user does not silently
+  // change which step is active.
+  const previouslyActive = tabs.value[activeTabIndex.value];
   tabs.value.splice(index, 0, tabWithUpdate);
 
   // Inform the child about the generated tabId and its initial active state
@@ -404,11 +532,15 @@ const addTab = (item: Tab, updateFn?: (active: boolean, tabId?: string) => void)
     updateFn(item.active, item.tabId);
   }
 
-  // if a step is added before the current one, go to it
-  if (index < activeTabIndex.value + 1) {
-    maxStep.value = index;
-    changeTab(activeTabIndex.value + 1, index);
+  if (previouslyActive) {
+    const newActiveIndex = tabs.value.indexOf(previouslyActive);
+    if (newActiveIndex !== -1 && newActiveIndex !== activeTabIndex.value) {
+      activeTabIndex.value = newActiveIndex;
+      maxStep.value = Math.max(maxStep.value, newActiveIndex);
+    }
   }
+
+  scheduleTabSort();
 };
 
 const rebuildTabsFromSchema = () => {
@@ -418,7 +550,7 @@ const rebuildTabsFromSchema = () => {
     const title = step.title || `Step ${index + 1}`;
 
     const tab: Tab = {
-      tabId: `${step.id || title.replace(/ /g, "")}${index}`,
+      tabId: `${wizardId.value}-${slugifyTabTitle(step.id || title)}`,
       title,
       active: index === activeTabIndex.value,
       checked: index <= activeTabIndex.value,
@@ -443,20 +575,77 @@ const rebuildTabsFromSchema = () => {
   }
 };
 
-const removeTab = (item: Tab) => {
-  const index = tabs.value.indexOf(item);
-  if (index > -1) {
-    // Go one step back if the current step is removed
-    if (index === activeTabIndex.value) {
-      maxStep.value = activeTabIndex.value - 1;
-      changeTab(activeTabIndex.value, activeTabIndex.value - 1);
+/**
+ * Accepts the uid <tab-content> registered with, or the tab object itself for
+ * callers using the exposed API. Matching on object identity alone fails,
+ * because `addTab` stores a copy of what the child handed over.
+ */
+const findTabIndex = (item: Tab | number): number => {
+  if (typeof item === "number") {
+    return tabs.value.findIndex((tab) => tab.uid === item);
+  }
+
+  const byIdentity = tabs.value.indexOf(item);
+  if (byIdentity > -1) {
+    return byIdentity;
+  }
+
+  if (item?.uid !== undefined) {
+    const byUid = tabs.value.findIndex((tab) => tab.uid === item.uid);
+    if (byUid > -1) {
+      return byUid;
     }
-    if (index < activeTabIndex.value) {
-      maxStep.value = activeTabIndex.value - 1;
-      activeTabIndex.value = activeTabIndex.value - 1;
-      emitTabChange(activeTabIndex.value + 1, activeTabIndex.value);
-    }
-    tabs.value.splice(index, 1);
+  }
+
+  return item?.tabId
+    ? tabs.value.findIndex((tab) => tab.tabId === item.tabId)
+    : -1;
+};
+
+/**
+ * Vue reuses a <tab-content> in place when siblings change, handing it new
+ * props rather than remounting it. Without this the wizard would keep showing
+ * the step it first registered (stale title, icon, beforeChange, route...).
+ */
+const updateTab = (uid: number | undefined, patch: Partial<Tab>) => {
+  if (uid === undefined) {
+    return;
+  }
+
+  const tab = tabs.value.find((item) => item.uid === uid);
+  if (tab) {
+    Object.assign(tab, patch);
+  }
+};
+
+const removeTab = (item: Tab | number) => {
+  const index = findTabIndex(item);
+  if (index === -1) {
+    return;
+  }
+
+  const wasActive = index === activeTabIndex.value;
+  const previousIndex = activeTabIndex.value;
+  tabs.value.splice(index, 1);
+
+  if (tabs.value.length === 0) {
+    activeTabIndex.value = 0;
+    maxStep.value = 0;
+    return;
+  }
+
+  maxStep.value = Math.min(maxStep.value, tabs.value.length - 1);
+
+  // Go one step back if the current step is removed
+  if (wasActive) {
+    const newIndex = Math.max(0, index - 1);
+    activateTabAndCheckStep(newIndex);
+    emitTabChange(previousIndex, newIndex);
+  } else if (index < previousIndex) {
+    // Everything after the removed step shifted left; stay on the same step.
+    activeTabIndex.value = previousIndex - 1;
+    maxStep.value = Math.max(0, maxStep.value);
+    emitTabChange(previousIndex, activeTabIndex.value);
   }
 };
 
@@ -545,13 +734,26 @@ const focusPrevTab = () => {
   }
 };
 
+// Arrow keys should follow what the user sees, and `reverseHorizontal`
+// renders the steps right-to-left.
+const onArrowRight = () => {
+  reverseHorizontal.value ? focusPrevTab() : focusNextTab();
+};
+
+const onArrowLeft = () => {
+  reverseHorizontal.value ? focusNextTab() : focusPrevTab();
+};
+
 const setLoading = (value: boolean) => {
   loading.value = value;
   emit("on-loading", value);
 };
 
 const setValidationError = (error: any) => {
-  tabs.value[activeTabIndex.value].validationError = error;
+  const activeTab = tabs.value[activeTabIndex.value];
+  if (activeTab) {
+    activeTab.validationError = error;
+  }
   emit("on-error", error);
 };
 
@@ -582,7 +784,10 @@ const executeBeforeChange = (validationResult: boolean, callback: () => void) =>
   if (validationResult) {
     callback();
   } else {
-    tabs.value[activeTabIndex.value].validationError = "error";
+    const activeTab = tabs.value[activeTabIndex.value];
+    if (activeTab) {
+      activeTab.validationError = "error";
+    }
   }
 };
 
@@ -761,7 +966,6 @@ const checkRouteChange = (route: any) => {
   });
 
   if (matchingTab && !matchingTab.active) {
-    const shouldValidate = matchingTabIndex > activeTabIndex.value;
     navigateToTab(matchingTabIndex);
   }
 };
@@ -818,6 +1022,7 @@ defineExpose({
   emitTabChange,
   addTab,
   removeTab,
+  updateTab,
   reset,
   activateAll,
   navigateToTab,
@@ -825,6 +1030,8 @@ defineExpose({
   prevTab,
   focusNextTab,
   focusPrevTab,
+  onArrowRight,
+  onArrowLeft,
   changeTab,
   deactivateTabs,
   activateTab,
@@ -834,6 +1041,7 @@ defineExpose({
 // Provide functions to child components
 provide('addTab', addTab);
 provide('removeTab', removeTab);
+provide('updateTab', updateTab);
 
 // Watchers
 watch(() => props.startIndex, (newStartIndex) => {
