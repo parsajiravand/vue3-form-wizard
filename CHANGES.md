@@ -8,14 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.2.0] - 2026-08
 ### Fixed
+- **Every wizard on a page rendered `id="fw_1"`.** The instance counter lived inside `<script setup>`, so it reset for each instance. Arrow-key focus also looked steps up with `document.getElementById`, which could move focus into a different wizard; lookups are now scoped to the wizard being navigated.
 - **Removing a step left it in the wizard.** `removeTab` compared object identity against a copy `addTab` had stored, so it never matched. A `<tab-content>` hidden with `v-if` unmounted its panel but kept its entry in the navigation, progress bar and step count. Steps are now unregistered by the child's uid.
 - **Steps mounted later were appended instead of ordered.** A step revealed by `v-if` registered last and appeared at the end of the navigation regardless of its position in the markup. Order now follows DOM position, reconciled once the DOM settles.
 - **`<tab-content>` prop changes were ignored.** The wizard registered a step once and never saw later changes to `title`, `icon`, `route`, `before-change` or `after-change` — a problem when Vue reuses a step in place, or when titles are translated at runtime.
-- **Every wizard on a page rendered `id="fw_1"`.** The instance counter lived inside `<script setup>`, so it reset for each instance. Generated step ids are now scoped to the wizard id too, so arrow-key focus can no longer jump into a different wizard.
 - **Removing the active first step set `activeTabIndex` to `-1`**, leaving no step selected and `maxStep` negative.
 - **`reset()` threw** on a wizard with no steps (`Cannot set properties of undefined`). Validation state is now written defensively.
-- Generated step ids are sanitized, so untitled steps no longer produce ids like `0` that are invalid in CSS selectors.
-- Schema step ids no longer include the step index, so the active step is retained when a conditional step is added or removed.
+- In schema mode the active step is retained when a conditional step is added or removed; it is now tracked by the schema step `id` rather than by a position-dependent `tabId`.
 - Vue no longer warns that a component was made reactive when using `schema-components`.
 - The progress bar no longer computes an infinite width when there are no steps.
 
@@ -29,14 +28,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - A step inserted ahead of the active one no longer pulls the user back to it and no longer resets `maxStep`; the user keeps their place. This code path was unreachable in every released version, so no existing behaviour changes.
-- Generated `tabId` values are now `<wizardId>-<slug>-<n>` (schema mode: `<wizardId>-<stepId>`). The documented `step-${tabId}` convention is unchanged; only the generated value differs.
+
+Generated `tabId` values keep their existing shape, and no prop, event, slot or method changed. Upgrading from 1.1.x requires no changes.
 
 ### Added
 - `updateTab` is provided to `<tab-content>` and exposed on the wizard instance, so a step's registration can be refreshed after its props change.
+- `findElementAndFocus` takes an optional root element to scope the lookup.
 - Docs: RTL prop reference, dynamic steps, and an accessibility section in the README.
 
+## [1.1.1] - 2026-03-19
+### Fixed
+- Footer buttons were misaligned in every layout except reversed horizontal. The rule disabling the `clearfix` hack on the flex footer was nested inside `.fw-horizontal-reverse`, so the leftover `::after` pseudo-element kept breaking button alignment everywhere else. It now applies to all layouts.
 
-## [1.0.0] - 2025-03
+### Added
+- 16th sample in `App.vue`: RTL content combined with reversed steps.
+
+### Changed
+- Stylesheets reformatted with Prettier (quotes, decimals, spacing); no visual change.
+- README RTL section replaced with a link to the hosted demo.
+
+## [1.1.0] - 2026-03-16
+### Added
+- `rtl` prop: renders step content right-to-left while leaving the steps and progress bar in place.
+- `reverse-horizontal` prop: runs the steps, progress bar and footer buttons right-to-left. Ignored in vertical layout.
+- `fw-rtl-content`, `fw-horizontal-reverse` and `fw-steps-reverse` style hooks.
+- Both props added to the `FormWizardProps` type and documented in the README, with a sample in `App.vue`.
+
+## [1.0.1] - 2026-03-13
+### Added
+- 15 runnable samples in `App.vue` covering basic usage, icons, layouts, shapes, validation and schema mode.
+
+### Changed
+- README rewritten around the 1.0 API: quick start, router integration, schema mode, RTL and the script table.
+- Backfilled the 1.0.0 entry in this changelog.
+
+## [1.0.0] - 2026-03-13
 ### Added
 - **Schema mode**: Declarative API with `schema`, `schema-components`, and `v-model` for shared wizard data
 - Schema step support for `condition` (hide steps dynamically) and `validate` (block navigation)

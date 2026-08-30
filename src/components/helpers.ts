@@ -16,11 +16,22 @@ export function getFocusedTabIndex(tabs: Tab[] = []): number {
   return tabIndex;
 }
 
-export function findElementAndFocus(elemId: string): void {
+/**
+ * `root` scopes the lookup to one wizard. Step ids only have to be unique
+ * within a wizard, so a page with several wizards would otherwise focus the
+ * first matching step in the document rather than the one being navigated.
+ */
+export function findElementAndFocus(elemId: string, root?: HTMLElement | null): void {
   if (typeof document === 'undefined') {
     return;
   }
-  const elem = document.getElementById(elemId);
+
+  const elem = root
+    ? Array.from(root.querySelectorAll<HTMLElement>('[id]')).find(
+        (candidate) => candidate.id === elemId
+      )
+    : document.getElementById(elemId);
+
   if (elem) {
     elem.focus();
   }
@@ -38,13 +49,4 @@ let wizardInstanceCounter = 0;
  */
 export function nextWizardId(): string {
   return `fw_${++wizardInstanceCounter}`;
-}
-
-/** Make an arbitrary step title safe to use inside a DOM id / CSS selector. */
-export function slugifyTabTitle(title: string): string {
-  return (
-    (title || '')
-      .replace(/[^a-zA-Z0-9_-]+/g, '-')
-      .replace(/^-+|-+$/g, '') || 'step'
-  );
 }

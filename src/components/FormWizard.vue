@@ -1,5 +1,6 @@
 <template>
   <div
+    ref="wizardRoot"
     :id="wizardId"
     class="vue-form-wizard"
     :class="[
@@ -83,8 +84,8 @@
           <span
             @click="prevTab"
             @keyup.enter="prevTab"
-            @keydown.space.prevent
-            @keyup.space="prevTab"
+            @keydown.space.self.prevent
+            @keyup.space.self="prevTab"
             v-if="displayPrevButton"
             role="button"
             tabindex="0"
@@ -103,8 +104,8 @@
           <span
             @click="nextTab"
             @keyup.enter="nextTab"
-            @keydown.space.prevent
-            @keyup.space="nextTab"
+            @keydown.space.self.prevent
+            @keyup.space.self="nextTab"
             v-if="isLastStep"
             role="button"
             tabindex="0"
@@ -118,8 +119,8 @@
           <span
             @click="nextTab"
             @keyup.enter="nextTab"
-            @keydown.space.prevent
-            @keyup.space="nextTab"
+            @keydown.space.self.prevent
+            @keyup.space.self="nextTab"
             role="button"
             tabindex="0"
             v-else
@@ -145,7 +146,6 @@ import {
   findElementAndFocus,
   getFocusedTabIndex,
   nextWizardId,
-  slugifyTabTitle,
 } from "./helpers.js";
 
 
@@ -168,6 +168,8 @@ interface Tab {
   uid?: number;
   /** DOM anchor of the registering <tab-content>, used to keep step order. */
   el?: Node | null;
+  /** Schema mode only: the step's `id`, stable across rebuilds. */
+  stepId?: string;
 }
 
 /** Registration details supplied by <tab-content> when it mounts. */
@@ -230,6 +232,9 @@ const internalWizardId = nextWizardId();
 
 // Generate ID if not provided (stable per instance in a given runtime)
 const wizardId = computed(() => props.id || internalWizardId);
+
+// Step ids are only unique within a wizard, so focus lookups are scoped here.
+const wizardRoot = ref<HTMLElement | null>(null);
 
 const emit = defineEmits({
   'on-change': (prevIndex: number, nextIndex: number) => true,
@@ -501,19 +506,14 @@ const scheduleTabSort = () => {
   });
 };
 
-let tabIdCounter = 0;
-
-// Scoped to the wizard id so two wizards on one page never share a step id.
-const createTabId = (title: string) =>
-  `${wizardId.value}-${slugifyTabTitle(title)}-${++tabIdCounter}`;
-
 const addTab = (
   item: Tab,
   updateFn?: (active: boolean, tabId?: string) => void,
   meta?: TabMeta
 ) => {
   const index = resolveTabIndex(meta?.el);
-  item.tabId = createTabId(item.title);
+  // Historical id shape - kept as-is so existing selectors keep working.
+  item.tabId = `${item.title.replace(/ /g, "")}${index}`;
 
   // Store the update function with the tab
   const tabWithUpdate = {
@@ -550,7 +550,8 @@ const rebuildTabsFromSchema = () => {
     const title = step.title || `Step ${index + 1}`;
 
     const tab: Tab = {
-      tabId: `${wizardId.value}-${slugifyTabTitle(step.id || title)}`,
+      tabId: `${step.id || title.replace(/ /g, "")}${index}`,
+      stepId: step.id,
       title,
       active: index === activeTabIndex.value,
       checked: index <= activeTabIndex.value,
@@ -720,7 +721,7 @@ const focusNextTab = () => {
     const tabToFocus = tabs.value[tabIndex + 1];
     if (tabToFocus.checked) {
       // The DOM id used for the step element is `step-${tab.tabId}`
-      findElementAndFocus(`step-${tabToFocus.tabId}`);
+      findElementAndFocus(`step-${tabToFocus.tabId}`, wizardRoot.value);
     }
   }
 };
@@ -730,7 +731,7 @@ const focusPrevTab = () => {
   if (tabIndex !== -1 && tabIndex > 0) {
     const toFocusId = tabs.value[tabIndex - 1].tabId;
     // The DOM id used for the step element is `step-${tab.tabId}`
-    findElementAndFocus(`step-${toFocusId}`);
+    findElementAndFocus(`step-${toFocusId}`, wizardRoot.value);
   }
 };
 
@@ -1066,10 +1067,15 @@ watch(
   () => wizardData.value,
   () => {
     if (useSchemaMode.value) {
-      const prevActiveId = tabs.value[activeTabIndex.value]?.tabId;
+      // Matched on the schema step id: `tabId` carries the step's position,
+      // so it changes whenever a conditional step appears or disappears.
+      const prevActiveId = tabs.value[activeTabIndex.value]?.stepId;
       rebuildTabsFromSchema();
       // Try to keep the same step active if still visible
-      const newIndex = tabs.value.findIndex((t) => t.tabId === prevActiveId);
+      const newIndex =
+        prevActiveId === undefined
+          ? -1
+          : tabs.value.findIndex((t) => t.stepId === prevActiveId);
       if (newIndex !== -1) {
         activateTabAndCheckStep(newIndex);
       }

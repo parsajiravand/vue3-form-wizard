@@ -23,7 +23,7 @@ describe("FormWizard - ids", () => {
     expect(ids[0]).not.toBe(ids[1]);
   });
 
-  it("keeps step ids unique across wizards so focus stays inside its own wizard", async () => {
+  it("keeps arrow-key focus inside the wizard that was navigated", async () => {
     const Host = defineComponent({
       setup: () => () =>
         h("div", [
@@ -32,11 +32,23 @@ describe("FormWizard - ids", () => {
         ]),
     });
 
-    const wrapper = mount(Host);
+    const wrapper = mount(Host, { attachTo: document.body });
     await flushPromises();
 
-    const stepIds = wrapper.findAll('[role="tab"]').map((el) => el.attributes("id"));
-    expect(new Set(stepIds).size).toBe(stepIds.length);
+    const wizards = wrapper.findAllComponents(FormWizard);
+    wizards.forEach((wizard) => (wizard.vm as any).activateAll());
+    await flushPromises();
+
+    // Both wizards use the same step titles, so both carry a `step-Step10`.
+    const second = wizards[1];
+    const secondSteps = second.findAll('[role="tab"]');
+    (secondSteps[0].element as HTMLElement).focus();
+
+    await second.find(".vue-form-wizard").trigger("keyup.right");
+
+    expect(second.element.contains(document.activeElement)).toBe(true);
+    expect(document.activeElement).toBe(secondSteps[1].element);
+    wrapper.unmount();
   });
 
   it("respects an explicitly provided id", async () => {
@@ -45,17 +57,17 @@ describe("FormWizard - ids", () => {
     expect(wrapper.find(".vue-form-wizard").attributes("id")).toBe("checkout");
   });
 
-  it("produces selector-safe ids for untitled steps", async () => {
+  it("keeps the historical step id shape", async () => {
     const wrapper = mount(FormWizard, {
-      slots: { default: () => [h(TabContent, {}), h(TabContent, { title: "Payment / Billing" })] },
+      slots: { default: () => [h(TabContent, { title: "Step 1" }), h(TabContent, { title: "Step 2" })] },
     });
     await flushPromises();
 
-    wrapper.findAll('[role="tab"]').forEach((el) => {
-      const id = el.attributes("id") as string;
-      expect(() => document.querySelector(`#${id}`)).not.toThrow();
-      expect(id).toMatch(/^step-[A-Za-z][\w-]*$/);
-    });
+    const ids = wrapper.findAll('[role="tab"]').map((el) => el.attributes("id"));
+    expect(ids).toEqual(["step-Step10", "step-Step21"]);
+
+    const panels = wrapper.findAll('[role="tabpanel"]').map((el) => el.attributes("id"));
+    expect(panels).toEqual(["Step10", "Step21"]);
   });
 });
 
@@ -94,6 +106,30 @@ describe("FormWizard - accessibility details", () => {
 
     await wrapper.find('.wizard-footer-left [role="button"]').trigger("keyup.space");
     expect(vm.activeTabIndex).toBe(0);
+  });
+
+  it("leaves Space alone for custom content inside the button slots", async () => {
+    const wrapper = mount(FormWizard, {
+      slots: {
+        default: twoSteps,
+        next: () => h("input", { class: "custom-next-input", type: "text" }),
+      },
+      attachTo: document.body,
+    });
+    await flushPromises();
+    const vm: any = wrapper.vm;
+
+    const input = wrapper.find(".custom-next-input");
+    const event = new KeyboardEvent("keydown", { key: " ", code: "Space", bubbles: true, cancelable: true });
+    input.element.dispatchEvent(event);
+
+    // The wizard must not swallow a space typed into slot content.
+    expect(event.defaultPrevented).toBe(false);
+
+    await input.trigger("keyup.space");
+    expect(vm.activeTabIndex).toBe(0);
+
+    wrapper.unmount();
   });
 
   it("disables the finish button while an async validation is in flight", async () => {
