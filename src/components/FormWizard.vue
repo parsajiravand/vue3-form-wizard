@@ -502,7 +502,7 @@ const navigateToTab = (index: number): boolean => {
       if (validate && actualIndex > activeTabIndex.value) {
         // Move to the next visible step (skipping hidden ones) and validate recursively
         const nextVisible = findNextVisibleTabIndex(activeTabIndex.value)
-        if (nextVisible !== -1 && nextVisible <= actualIndex) {
+        if (nextVisible !== -1 && nextVisible < actualIndex) {
           changeTab(activeTabIndex.value, nextVisible)
           beforeTabChange(activeTabIndex.value, cb, {
             continueOnValidationError: allowContinueOnValidationError,
