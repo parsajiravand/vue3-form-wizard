@@ -38,7 +38,11 @@
                 ? false
                 : navigateToTab(index)
             "
-            @keyup.enter="navigateToTab(index)"
+            @keyup.enter="
+              disableBackOnClickStep || disableBack
+                ? false
+                : navigateToTab(index)
+            "
             :transition="transition"
             :index="index"
             :disable-back-on-click-step="
